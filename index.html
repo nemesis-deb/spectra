@@ -20,6 +20,7 @@
       <div style="display: flex; gap: 5px;">
         <button id="localFilesTab" class="tab-btn active" style="flex: 1; padding: 8px; background: #00ff88; border: none; border-radius: 3px; cursor: pointer; font-size: 13px; font-weight: 600; color: #000;">Local Files</button>
         <button id="spotifyTab" class="tab-btn" style="flex: 1; padding: 8px; background: #444; border: none; border-radius: 3px; cursor: pointer; font-size: 13px; font-weight: 600; color: #888;">Spotify</button>
+        <button id="youtubeTab" class="tab-btn" style="flex: 1; padding: 8px; background: #444; border: none; border-radius: 3px; cursor: pointer; font-size: 13px; font-weight: 600; color: #888;">YouTube</button>
       </div>
     </div>
     <div id="spotifyPanel" class="hidden" style="padding: 15px; border-bottom: 1px solid #444;">
@@ -44,6 +45,28 @@
           <button id="spotifyLogoutBtn" style="padding: 5px 10px; background: transparent; border: 1px solid #444; color: #888; border-radius: 3px; cursor: pointer; font-size: 11px;">Disconnect</button>
         </div>
         <button id="loadPlaylistsBtn" style="width: 100%; background: #00ff88; color: #000; padding: 8px; border: none; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 13px; margin-bottom: 10px;">Load Playlists</button>
+      </div>
+    </div>
+    <div id="youtubePanel" class="hidden" style="padding: 15px; border-bottom: 1px solid #444;">
+      <div style="text-align: center;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" style="margin: 10px auto; display: block;">
+          <rect x="2" y="4" width="20" height="16" rx="2" stroke="#FF0000" stroke-width="2"/>
+          <polygon points="10,8 10,16 16,12" fill="#FF0000"/>
+        </svg>
+        <p style="color: #888; font-size: 13px; margin: 10px 0;">Search and play YouTube videos with visualization</p>
+        <div class="youtube-search-container-sidebar" style="margin-top: 15px;">
+          <input
+            type="text"
+            id="youtubeSidebarSearch"
+            placeholder="Search YouTube..."
+            autocomplete="off"
+            style="width: 100%; padding: 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid #FF0000; border-radius: 5px; color: #fff; font-size: 13px; margin-bottom: 10px;"
+          />
+          <button id="youtubeSidebarSearchBtn" style="width: 100%; background: #FF0000; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 14px;">🔍 Search YouTube</button>
+        </div>
+        <div id="youtubeResultsSidebar" style="margin-top: 15px; max-height: 400px; overflow-y: auto;">
+          <!-- Results will be populated here -->
+        </div>
       </div>
     </div>
     <div class="folder-path" id="folderPath">
@@ -447,7 +470,13 @@
     </div>
   </div>
 
+  <!-- YouTube Player Container (small, visible in corner) -->
+  <div id="youtube-player-container" style="display: none; position: fixed; bottom: 10px; right: 10px; width: 320px; height: 180px; z-index: 9999; border: 2px solid #FF0000; border-radius: 5px; overflow: hidden; background: #000;"></div>
+
   <!-- Spotify Web Playback SDK removed - using API for metadata only -->
+  <script src="src/js/youtube-search.js"></script>
+  <script src="src/js/youtube-audio.js"></script>
   <script type="module" src="src/js/renderer.js"></script>
+  <script src="src/js/youtube-integration.js"></script>
 </body>
 </html>

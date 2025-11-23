@@ -4,12 +4,13 @@
   "description": "A beautiful audio visualizer app with multiple visualization modes and customization options.",
   "main": "main.js",
   "scripts": {
-    "start": "electron . --no-sandbox --disable-gpu-sandbox",
+    "start": "bash -c 'if [ -d dist/squashfs-root ]; then ./run-spectra.sh; else echo \"Please run npm run build:linux first to build the application\"; fi'",
+    "start:dev": "electron . --no-sandbox --disable-gpu-sandbox --use-gl=desktop",
     "start:quiet": "cross-env ELECTRON_ENABLE_LOGGING=0 electron . --no-sandbox --disable-gpu-sandbox",
     "build": "electron-builder",
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux",
+    "build:linux": "electron-builder --linux && cd dist && ./Spectra-1.0.2.AppImage --appimage-extract && cd ..",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Katuyo",
@@ -84,9 +85,11 @@
   "dependencies": {
     "@electron/remote": "^2.1.3",
     "discord-rpc": "^4.0.1",
+    "dotenv": "^17.2.3",
     "jsmediatags": "^3.9.7",
     "spotify-web-api-node": "^5.0.2",
     "three": "^0.181.2",
-    "web-audio-beat-detector": "^8.2.31"
+    "web-audio-beat-detector": "^8.2.31",
+    "ytdl-core": "^4.11.5"
   }
 }

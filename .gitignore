@@ -25,3 +25,6 @@ desktop.ini
 
 # Electron
 out/
+
+# Environment variables
+.env

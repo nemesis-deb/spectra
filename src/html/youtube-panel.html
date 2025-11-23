@@ -1,0 +1,267 @@
+<!-- YouTube Search Panel -->
+<div id="youtube-panel" class="panel" style="display: none;">
+    <div class="panel-header">
+        <h3>🎵 YouTube Search</h3>
+        <button id="close-youtube-panel" class="close-btn">✕</button>
+    </div>
+
+    <div class="panel-content">
+        <!-- Search Bar -->
+        <div class="youtube-search-container">
+            <input
+                type="text"
+                id="youtube-search-input"
+                placeholder="Search YouTube videos..."
+                autocomplete="off"
+            />
+            <button id="youtube-search-btn" class="btn-primary">
+                <span class="icon">🔍</span> Search
+            </button>
+        </div>
+
+        <!-- API Key Warning (shown if not configured) -->
+        <div id="youtube-api-warning" class="warning-box" style="display: none;">
+            <p><strong>⚠️ YouTube API Key Required</strong></p>
+            <p>Please configure your YouTube API key in Settings or create a <code>.env</code> file with:</p>
+            <pre>YOUTUBE_API_KEY=your_api_key_here</pre>
+            <p><a href="#" id="youtube-api-help">How to get an API key?</a></p>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="youtube-loading" class="loading-indicator" style="display: none;">
+            <div class="spinner"></div>
+            <p>Searching YouTube...</p>
+        </div>
+
+        <!-- Search Results -->
+        <div id="youtube-results" class="youtube-results">
+            <!-- Results will be populated here -->
+        </div>
+
+        <!-- No results message -->
+        <div id="youtube-no-results" class="no-results" style="display: none;">
+            <p>No videos found. Try a different search term.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden YouTube Player Container -->
+<div id="youtube-player-container" style="display: none;"></div>
+
+<style>
+#youtube-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    background: rgba(20, 20, 20, 0.95);
+    border: 1px solid #00ff88;
+    border-radius: 10px;
+    box-shadow: 0 10px 50px rgba(0, 255, 136, 0.3);
+    z-index: 10000;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(0, 255, 136, 0.1);
+    border-bottom: 1px solid #00ff88;
+}
+
+.panel-header h3 {
+    margin: 0;
+    color: #00ff88;
+    font-size: 18px;
+}
+
+.close-btn {
+    background: transparent;
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s;
+}
+
+.close-btn:hover {
+    background: #00ff88;
+    color: #000;
+}
+
+.panel-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.youtube-search-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#youtube-search-input {
+    flex: 1;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #00ff88;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 14px;
+}
+
+#youtube-search-input:focus {
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.btn-primary {
+    padding: 12px 24px;
+    background: #00ff88;
+    border: none;
+    border-radius: 5px;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary:hover {
+    background: #00cc6a;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+}
+
+.warning-box {
+    background: rgba(255, 165, 0, 0.1);
+    border: 1px solid orange;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.warning-box p {
+    margin: 5px 0;
+    color: #fff;
+}
+
+.warning-box pre {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 3px;
+    margin: 10px 0;
+    color: #00ff88;
+}
+
+.warning-box a {
+    color: #00ff88;
+    text-decoration: underline;
+}
+
+.loading-indicator {
+    text-align: center;
+    padding: 40px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(0, 255, 136, 0.3);
+    border-top-color: #00ff88;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.youtube-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+}
+
+.youtube-video-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.youtube-video-item:hover {
+    transform: translateY(-5px);
+    border-color: #00ff88;
+    box-shadow: 0 5px 20px rgba(0, 255, 136, 0.2);
+}
+
+.youtube-video-item img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    display: block;
+}
+
+.youtube-video-info {
+    padding: 10px;
+}
+
+.youtube-video-title {
+    font-size: 13px;
+    color: #fff;
+    margin: 0 0 5px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.4;
+}
+
+.youtube-video-channel {
+    font-size: 11px;
+    color: #999;
+    margin: 0;
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+/* Scrollbar styling */
+.panel-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: #00ff88;
+    border-radius: 4px;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+    background: #00cc6a;
+}
+</style>

@@ -1,4 +1,3 @@
-// ES6 imports
 import { setSettings } from './visualizers/base.js';
 import { WaveformVisualizer } from './visualizers/waveform.js';
 import { FrequencyBarsVisualizer } from './visualizers/frequency-bars.js';
@@ -80,12 +79,12 @@ function startPerformanceMonitoring() {
         // Calculate FPS
         performanceStats.fps = frameCount;
         frameCount = 0;
-        
+
         // Get memory usage (if available)
         if (performance.memory) {
             performanceStats.memory = performance.memory.usedJSHeapSize / 1048576; // Convert to MB
         }
-        
+
         // Update status display
         updateStatusWithPerf(currentStatusMessage);
     }, 1000);
@@ -108,6 +107,111 @@ spotify.onBPMReceived = (tempo) => {
 function parseFileName(filename) {
     return fileManager.parseFileName(filename);
 }
+
+// === External audio bridge (YouTube) ===
+window.audioManager = {
+    externalAudio: null,
+    externalAudioSource: null,
+    setAudioSource(mediaElement, providedCtx = null) {
+        try {
+            // Use provided context or existing renderer audioContext, or create one
+            const ctx = providedCtx || window.audioContext || new (window.AudioContext || window.webkitAudioContext)();
+            window.audioContext = ctx;
+
+            // Ensure analyser & gain exist (reuse renderer globals if present)
+            if (!window.analyser) {
+                window.analyser = ctx.createAnalyser();
+                window.analyser.fftSize = 2048;
+            }
+            analyser = window.analyser;
+
+            if (!window.gainNode) {
+                window.gainNode = ctx.createGain();
+                window.gainNode.gain.value = volume ?? 1.0;
+            }
+            gainNode = window.gainNode;
+
+            // Clean previous source
+            if (this.externalAudioSource) {
+                try { this.externalAudioSource.disconnect(); } catch (e) { /* ignore */ }
+            }
+
+            this.externalAudio = mediaElement;
+            this.externalAudioSource = ctx.createMediaElementSource(mediaElement);
+            this.externalAudioSource.connect(analyser);
+            analyser.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            // Hook element events to update UI & progress
+            const onPlay = () => {
+                isPlaying = true;
+                if (playBtn) playBtn.disabled = true;
+                if (pauseBtn) pauseBtn.disabled = false;
+                updateDiscordPresence();
+                animate(); // ensure visualizer loop runs
+            };
+            const onPause = () => {
+                isPlaying = false;
+                if (playBtn) playBtn.disabled = false;
+                if (pauseBtn) pauseBtn.disabled = true;
+                updateDiscordPresence();
+            };
+            const onTime = () => {
+                const currentTime = mediaElement.currentTime || 0;
+                const duration = mediaElement.duration || 0;
+                if (currentTimeEl) currentTimeEl.textContent = formatTime(currentTime);
+                if (durationEl) durationEl.textContent = formatTime(duration);
+                if (progressFill && progressHandle && duration > 0) {
+                    const pct = Math.min((currentTime / duration) * 100, 100);
+                    progressFill.style.width = `${pct}%`;
+                    progressHandle.style.left = `${pct}%`;
+                }
+            };
+            const onEnded = () => {
+                isPlaying = false;
+                if (playBtn) playBtn.disabled = false;
+                if (pauseBtn) pauseBtn.disabled = true;
+                updateFileSelection();
+                updateDiscordPresence();
+            };
+
+            // Remove previous listeners if any
+            try {
+                mediaElement.removeEventListener('play', mediaElement.__onPlay);
+                mediaElement.removeEventListener('pause', mediaElement.__onPause);
+                mediaElement.removeEventListener('timeupdate', mediaElement.__onTime);
+                mediaElement.removeEventListener('ended', mediaElement.__onEnded);
+            } catch (e) { }
+
+            mediaElement.__onPlay = onPlay;
+            mediaElement.__onPause = onPause;
+            mediaElement.__onTime = onTime;
+            mediaElement.__onEnded = onEnded;
+
+            mediaElement.addEventListener('play', onPlay);
+            mediaElement.addEventListener('pause', onPause);
+            mediaElement.addEventListener('timeupdate', onTime);
+            mediaElement.addEventListener('ended', onEnded);
+
+            statusText.textContent = 'YouTube audio connected - visualizations enabled!';
+            return true;
+        } catch (err) {
+            console.error('audioManager.setAudioSource error:', err);
+            return false;
+        }
+    },
+
+    clear() {
+        if (this.externalAudio) {
+            try {
+                this.externalAudio.pause();
+                if (this.externalAudioSource) this.externalAudioSource.disconnect();
+            } catch (e) { /* ignore */ }
+            this.externalAudio = null;
+            this.externalAudioSource = null;
+        }
+    }
+};
 
 let audioBuffer = null;
 let audioSource = null;
@@ -153,7 +257,7 @@ gainNode = audioContext.createGain();
 gainNode.gain.value = 1.0;
 
 // Create analyser node
-const analyser = audioContext.createAnalyser();
+var analyser = audioContext.createAnalyser();
 analyser.fftSize = 2048; // Must be power of 2 (256, 512, 1024, 2048, etc.)
 analyser.smoothingTimeConstant = 0.8; // 0-1, higher = smoother
 console.log('AnalyserNode created - fftSize:', analyser.fftSize, 'smoothing:', analyser.smoothingTimeConstant);
@@ -248,9 +352,9 @@ function showNotification(message, type = 'info') {
         animation: slideIn 0.3s ease;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     `;
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => notification.remove(), 300);
@@ -329,7 +433,7 @@ async function updateNowPlaying(filename, filePath = null) {
         // Load metadata if we have a file path
         if (filePath) {
             let metadata = metadataCache.get(filePath);
-            
+
             if (!metadata) {
                 metadata = await ipcRenderer.invoke('extract-metadata', filePath);
                 metadataCache.set(filePath, metadata);
@@ -341,7 +445,7 @@ async function updateNowPlaying(filename, filePath = null) {
             const album = metadata.album;
 
             nowPlayingTitle.textContent = title;
-            
+
             if (artist && album) {
                 nowPlayingArtist.textContent = `${artist} • ${album}`;
             } else if (artist) {
@@ -394,6 +498,22 @@ async function updateDiscordPresence() {
 
 // Update progress bar
 function updateProgress() {
+    // External audio (YouTube)
+    if (window.audioManager && window.audioManager.externalAudio) {
+        const audioEl = window.audioManager.externalAudio;
+        if (!audioEl) return;
+        const currentTimeVal = audioEl.currentTime || 0;
+        const durationVal = audioEl.duration || 0;
+        if (currentTimeEl) currentTimeEl.textContent = formatTime(currentTimeVal);
+        if (durationEl) durationEl.textContent = formatTime(durationVal);
+        if (progressFill && progressHandle && durationVal > 0) {
+            const progress = Math.min((currentTimeVal / durationVal) * 100, 100);
+            progressFill.style.width = `${progress}%`;
+            progressHandle.style.left = `${progress}%`;
+        }
+        return;
+    }
+
     if (!audioBuffer || !isPlaying) return;
 
     const currentTime = audioContext.currentTime - startTime;
@@ -574,7 +694,7 @@ function updateQueueDisplay() {
         iconSpan.style.width = '40px';
         iconSpan.style.height = '40px';
         iconSpan.style.flexShrink = '0';
-        
+
         // Try to load album art
         if (settings.albumArtBackground) {
             albumArtManager.extractAlbumArt(file.path).then(artUrl => {
@@ -609,12 +729,12 @@ function updateQueueDisplay() {
         // Load metadata asynchronously
         (async () => {
             let metadata = metadataCache.get(file.path);
-            
+
             if (!metadata) {
                 metadata = await ipcRenderer.invoke('extract-metadata', file.path);
                 metadataCache.set(file.path, metadata);
             }
-            
+
             const title = metadata.title || parsed.title;
             const artist = metadata.artist;
             const album = metadata.album;
@@ -647,10 +767,22 @@ function updateQueueDisplay() {
 
 // Seek to position
 progressBar.addEventListener('click', (e) => {
+    const rect = progressBar.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+
+    // If external audio (YouTube)
+    if (window.audioManager && window.audioManager.externalAudio) {
+        const audioEl = window.audioManager.externalAudio;
+        const duration = audioEl.duration || 0;
+        if (duration > 0) {
+            audioEl.currentTime = percent * duration;
+            // UI will update via timeupdate listener
+        }
+        return;
+    }
+
     if (!audioBuffer) return;
 
-    const rect = progressBar.getBoundingClientRect();
-    const percent = (e.clientX - rect.left) / rect.width;
     const seekTime = percent * audioBuffer.duration;
 
     if (isPlaying && audioSource) {
@@ -698,7 +830,6 @@ progressBar.addEventListener('click', (e) => {
         audioSource.start(0, seekTime);
         startTime = audioContext.currentTime - seekTime;
     } else {
-        // Just update the visual position
         const progress = percent * 100;
         progressFill.style.width = `${progress}%`;
         progressHandle.style.left = `${progress}%`;
@@ -706,6 +837,8 @@ progressBar.addEventListener('click', (e) => {
         pauseTime = seekTime;
     }
 });
+
+
 
 // ===== FILE BROWSER =====
 const fs = require('fs');
@@ -955,7 +1088,7 @@ function renderFileList() {
 
     // Check if we should group by folders
     const groupedFolders = fileManager.getGroupedFiles();
-    
+
     if (groupedFolders && groupedFolders.length > 1) {
         // Render with folder grouping
         renderGroupedFileList(filteredFiles, groupedFolders);
@@ -975,7 +1108,7 @@ function renderFlatFileList(filteredFiles) {
         // Create file item HTML with artist and title
         const iconSpan = document.createElement('span');
         iconSpan.className = 'file-icon';
-        
+
         // Try to load album art for this file
         if (settings.albumArtBackground) {
             albumArtManager.extractAlbumArt(file.path).then(artUrl => {
@@ -1010,13 +1143,13 @@ function renderFlatFileList(filteredFiles) {
         (async () => {
             // Check cache first
             let metadata = metadataCache.get(file.path);
-            
+
             if (!metadata) {
                 // Extract and cache metadata
                 metadata = await ipcRenderer.invoke('extract-metadata', file.path);
                 metadataCache.set(file.path, metadata);
             }
-            
+
             // Use metadata if available, otherwise fall back to filename parsing
             const title = metadata.title || parseFileName(file.name).title;
             const artist = metadata.artist;
@@ -1074,7 +1207,7 @@ function renderGroupedFileList(filteredFiles, groupedFolders) {
     // Group filtered files by folder
     const filesByFolder = new Map();
     const mainFolderPath = fileManager.getCurrentFolder();
-    
+
     filteredFiles.forEach(file => {
         const folderPath = require('path').dirname(file.path);
         if (!filesByFolder.has(folderPath)) {
@@ -1143,7 +1276,7 @@ function createFileItem(file, index, filteredFiles, isInSubfolder = false) {
     // Create file item HTML with artist and title
     const iconSpan = document.createElement('span');
     iconSpan.className = 'file-icon';
-    
+
     // Try to load album art for this file
     if (settings.albumArtBackground) {
         albumArtManager.extractAlbumArt(file.path).then(artUrl => {
@@ -1178,13 +1311,13 @@ function createFileItem(file, index, filteredFiles, isInSubfolder = false) {
     (async () => {
         // Check cache first
         let metadata = metadataCache.get(file.path);
-        
+
         if (!metadata) {
             // Extract and cache metadata
             metadata = await ipcRenderer.invoke('extract-metadata', file.path);
             metadataCache.set(file.path, metadata);
         }
-        
+
         // Use metadata if available, otherwise fall back to filename parsing
         const title = metadata.title || parseFileName(file.name).title;
         const artist = metadata.artist;
@@ -1353,6 +1486,14 @@ function updateFileSelection() {
 
 // Play button handler
 playBtn.addEventListener('click', () => {
+    // If an external media element is connected (YouTube)
+    if (window.audioManager && window.audioManager.externalAudio) {
+        window.audioManager.externalAudio.play().catch(err => {
+            console.warn('Failed to play external audio:', err);
+        });
+        return;
+    }
+
     if (!audioBuffer) return;
 
     // Resume audio context if suspended
@@ -1431,6 +1572,11 @@ playBtn.addEventListener('click', () => {
 
 // Pause button handler
 pauseBtn.addEventListener('click', () => {
+    if (window.audioManager && window.audioManager.externalAudio) {
+        window.audioManager.externalAudio.pause();
+        return;
+    }
+
     if (audioSource && isPlaying) {
         manualStop = true; // Set flag before stopping
         audioSource.stop();
@@ -1556,6 +1702,7 @@ populateVisualizerSelect();
 
 // Main animation loop
 function animate() {
+    // console.log('Animating...'); // Debug log
     requestAnimationFrame(animate);
 
     // Count frame for FPS calculation
@@ -1607,13 +1754,13 @@ if (savePresetBtn) {
             showNotification('No visualizer active', 'error');
             return;
         }
-        
+
         const visualizerSettings = visualizer.settings || {};
         const presetName = presetManager.generatePresetName(visualizer.name);
-        
+
         const preset = presetManager.createPreset(visualizer.name, visualizerSettings, settings);
         const result = await presetManager.exportPreset(preset, presetName);
-        
+
         if (result.success) {
             showNotification('Preset saved successfully!', 'success');
         } else {
@@ -1625,12 +1772,12 @@ if (savePresetBtn) {
 if (loadPresetBtn) {
     loadPresetBtn.addEventListener('click', async () => {
         const result = await presetManager.importPreset();
-        
+
         if (result.success) {
             // Apply the preset
             const applyResult = presetManager.applyPreset(
                 result.preset,
-                { 
+                {
                     getCurrentVisualizerName: () => {
                         const viz = visualizerManager.getCurrent();
                         return viz ? viz.name : null;
@@ -1653,7 +1800,7 @@ if (loadPresetBtn) {
                     }
                 }
             );
-            
+
             if (applyResult.success) {
                 // Reload UI to reflect changes
                 loadSettings();
@@ -2201,6 +2348,17 @@ localFilesTab.addEventListener('click', () => {
     spotifyTab.style.background = '#444';
     spotifyTab.style.color = '#888';
     spotifyPanel.classList.add('hidden');
+
+    // Hide YouTube panel if it exists
+    const youtubePanel = document.getElementById('youtubePanel');
+    if (youtubePanel) youtubePanel.classList.add('hidden');
+    const youtubeTab = document.getElementById('youtubeTab');
+    if (youtubeTab) {
+        youtubeTab.classList.remove('active');
+        youtubeTab.style.background = '#444';
+        youtubeTab.style.color = '#888';
+    }
+
     searchInputWrapper.classList.remove('hidden');
     browseFolderBtnContainer.classList.remove('hidden');
     isSpotifyMode = false;
@@ -2215,6 +2373,17 @@ spotifyTab.addEventListener('click', () => {
     localFilesTab.style.background = '#444';
     localFilesTab.style.color = '#888';
     spotifyPanel.classList.remove('hidden');
+
+    // Hide YouTube panel if it exists
+    const youtubePanel = document.getElementById('youtubePanel');
+    if (youtubePanel) youtubePanel.classList.add('hidden');
+    const youtubeTab = document.getElementById('youtubeTab');
+    if (youtubeTab) {
+        youtubeTab.classList.remove('active');
+        youtubeTab.style.background = '#444';
+        youtubeTab.style.color = '#888';
+    }
+
     searchInputWrapper.classList.add('hidden');
     browseFolderBtnContainer.classList.add('hidden');
     isSpotifyMode = true;
@@ -2313,7 +2482,7 @@ ipcRenderer.on('spotify-track-features-received', (event, data) => {
         updateBPMDisplay();
         console.log('Spotify track BPM:', detectedBPM);
     }
-    
+
     // Spotify provides key as integer (0-11) and mode (0=minor, 1=major)
     if (data.features && data.features.key !== undefined && data.features.mode !== undefined) {
         const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];

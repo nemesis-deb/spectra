@@ -16,6 +16,7 @@ process.on('unhandledRejection', (reason, promise) => {
 // Widevine/DRM support removed - using local file playback only
 
 // Suppress GPU-related warnings
+app.commandLine.appendSwitch('no-sandbox');
 app.commandLine.appendSwitch('disable-gpu-sandbox');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('disable-software-rasterizer');
@@ -55,7 +56,7 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
-  
+
   // Check if dev tools should open on startup
   mainWindow.webContents.on('did-finish-load', () => {
     try {
@@ -63,7 +64,7 @@ function createWindow() {
       const path = require('path');
       const userDataPath = app.getPath('userData');
       const settingsPath = path.join(userDataPath, 'audioVisualizerSettings.json');
-      
+
       // Try to read settings from localStorage equivalent
       mainWindow.webContents.executeJavaScript('localStorage.getItem("audioVisualizerSettings")')
         .then(settingsStr => {
@@ -357,6 +358,68 @@ function setupIPCHandlers() {
       return { success: false, error: error.message };
     }
   });
+
+  // YouTube audio extraction using yt-dlp
+  ipcMain.handle('get-youtube-audio-url', async (event, videoId) => {
+    try {
+      console.log('[Main] Getting YouTube audio URL for:', videoId);
+
+      const { exec } = require('child_process');
+      const os = require('os');
+      const path = require('path');
+
+      // Path to yt-dlp
+      const ytdlpPath = path.join(os.homedir(), '.local', 'bin', 'yt-dlp');
+
+      // Command to get best audio URL
+      const command = `"${ytdlpPath}" -f "bestaudio" --get-url --get-title --get-duration --get-thumbnail "https://www.youtube.com/watch?v=${videoId}"`;
+
+      return new Promise((resolve, reject) => {
+        exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
+          if (error) {
+            console.error('[Main] yt-dlp error:', stderr);
+            reject(new Error('Failed to extract audio URL'));
+            return;
+          }
+
+          // Filter out WARNING lines
+          const lines = stdout.trim().split('\n').filter(line => !line.startsWith('WARNING:'));
+
+          if (lines.length < 4) {
+            console.error('[Main] Invalid yt-dlp output, got:', lines);
+            reject(new Error('Invalid yt-dlp output'));
+            return;
+          }
+
+          // Order from yt-dlp: title, url, thumbnail, duration
+          const [title, url, thumbnail, duration] = lines;
+
+          // Parse duration (format: HH:MM:SS or MM:SS)
+          const durationParts = duration.split(':').map(Number);
+          let durationSeconds = 0;
+          if (durationParts.length === 3) {
+            durationSeconds = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
+          } else if (durationParts.length === 2) {
+            durationSeconds = durationParts[0] * 60 + durationParts[1];
+          }
+
+          console.log('[Main] Successfully extracted audio URL');
+
+          resolve({
+            url: url,
+            title: title,
+            duration: durationSeconds,
+            thumbnail: thumbnail
+          });
+        });
+      });
+
+    } catch (error) {
+      console.error('[Main] Error getting YouTube audio:', error);
+      throw error;
+    }
+  });
+
 }
 
 app.whenReady().then(() => {

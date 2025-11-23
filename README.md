@@ -290,6 +290,21 @@ npm install
 npm start
 ```
 
+**Linux Note:** On some Linux systems with kernel 6.14+, you may encounter SIGSEGV crashes when running Electron in development mode. If this happens:
+
+1. Build the Linux AppImage first:
+   ```bash
+   npm run build:linux
+   ```
+
+2. Then use `npm start` which will automatically use the built version.
+
+Alternatively, install libfuse2 to run the AppImage directly:
+```bash
+sudo apt install libfuse2
+./dist/Spectra-1.0.2.AppImage
+```
+
 ### Build Installers
 
 ```bash
