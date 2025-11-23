@@ -500,6 +500,24 @@ browseFolderBtn.addEventListener('click', async () => {
     ipcRenderer.send('open-folder-dialog');
 });
 
+// Include subfolders checkbox
+const includeSubfoldersCheckbox = document.getElementById('includeSubfoldersCheckbox');
+if (includeSubfoldersCheckbox) {
+    // Set initial state from localStorage
+    includeSubfoldersCheckbox.checked = includeSubfolders;
+    
+    includeSubfoldersCheckbox.addEventListener('change', (e) => {
+        includeSubfolders = e.target.checked;
+        localStorage.setItem('includeSubfolders', includeSubfolders);
+        console.log('Include subfolders:', includeSubfolders);
+        
+        // Reload current folder if one is loaded
+        if (currentFolder) {
+            loadFolder(currentFolder);
+        }
+    });
+}
+
 // Receive folder path from main process
 ipcRenderer.on('folder-selected', (event, folderPath) => {
     console.log('Received folder path:', folderPath);
@@ -540,9 +558,50 @@ ipcRenderer.on('menu-repeat', () => {
     repeatBtn.click();
 });
 
+// Settings for folder scanning
+let includeSubfolders = localStorage.getItem('includeSubfolders') === 'true' || false;
+
+// Recursively scan folder for audio files
+function scanFolderRecursive(folderPath, audioExtensions) {
+    let files = [];
+    
+    try {
+        const items = fs.readdirSync(folderPath);
+        
+        items.forEach(item => {
+            const fullPath = path.join(folderPath, item);
+            
+            try {
+                const stats = fs.statSync(fullPath);
+                
+                if (stats.isDirectory() && includeSubfolders) {
+                    // Recursively scan subdirectory
+                    const subFiles = scanFolderRecursive(fullPath, audioExtensions);
+                    files = files.concat(subFiles);
+                } else if (stats.isFile()) {
+                    const ext = path.extname(item).toLowerCase();
+                    if (audioExtensions.includes(ext)) {
+                        files.push({
+                            name: item,
+                            path: fullPath,
+                            folder: path.basename(path.dirname(fullPath))
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn('Error accessing:', fullPath, err.message);
+            }
+        });
+    } catch (error) {
+        console.error('Error scanning folder:', folderPath, error.message);
+    }
+    
+    return files;
+}
+
 // Load folder contents
 function loadFolder(folderPath) {
-    console.log('Loading folder:', folderPath);
+    console.log('Loading folder:', folderPath, 'Include subfolders:', includeSubfolders);
     
     try {
         // Check if folder exists
@@ -550,22 +609,12 @@ function loadFolder(folderPath) {
             throw new Error('Folder does not exist');
         }
 
-        const files = fs.readdirSync(folderPath);
-        console.log('Found files:', files.length);
-        
-        audioFiles = [];
-
-        // Filter audio files
         const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma'];
-        files.forEach(file => {
-            const ext = path.extname(file).toLowerCase();
-            if (audioExtensions.includes(ext)) {
-                audioFiles.push({
-                    name: file,
-                    path: path.join(folderPath, file)
-                });
-            }
-        });
+        
+        // Scan folder (with or without subfolders)
+        audioFiles = scanFolderRecursive(folderPath, audioExtensions);
+        
+        console.log('Found files:', audioFiles.length);
 
         // Sort alphabetically
         audioFiles.sort((a, b) => a.name.localeCompare(b.name));

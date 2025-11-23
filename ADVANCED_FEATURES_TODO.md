@@ -276,6 +276,10 @@ This document outlines advanced features to be implemented in the Audio Visualiz
 - [ ] Create duplicate report export
 
 ### Phase 29: Folder Grouping
+- [x] Add recursive folder scanning (include subfolders option)
+- [x] Create checkbox toggle for subfolder inclusion
+- [x] Save subfolder preference to localStorage
+- [x] Auto-reload folder when toggle changes
 - [ ] Add grouping options (Artist, Album, Genre, Folder)
 - [ ] Create grouped view UI
 - [ ] Implement collapsible groups
