@@ -2200,6 +2200,8 @@ const loadPlaylistsBtn = document.getElementById('loadPlaylistsBtn');
 const spotifyLogin = document.getElementById('spotifyLogin');
 const spotifyConnected = document.getElementById('spotifyConnected');
 const spotifyUsername = document.getElementById('spotifyUsername');
+const spotifySearchInput = document.getElementById('spotifySearchInput');
+const spotifySearchBtn = document.getElementById('spotifySearchBtn');
 const searchInputWrapper = document.querySelector('.search-input-wrapper');
 const browseFolderBtnContainer = browseFolderBtn.parentElement;
 
@@ -2266,6 +2268,24 @@ loadPlaylistsBtn.addEventListener('click', () => {
     statusText.textContent = 'Loading playlists...';
 });
 
+// Spotify search
+function performSpotifySearch() {
+    const query = spotifySearchInput.value.trim();
+    if (!query) return;
+    
+    console.log('Searching Spotify for:', query);
+    ipcRenderer.send('spotify-search', query);
+    statusText.textContent = `Searching for "${query}"...`;
+}
+
+spotifySearchBtn.addEventListener('click', performSpotifySearch);
+
+spotifySearchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        performSpotifySearch();
+    }
+});
+
 // Listen for Spotify auth success
 ipcRenderer.on('spotify-auth-success', (event, data) => {
     console.log('Spotify authentication successful!', data.user);
@@ -2307,6 +2327,14 @@ ipcRenderer.on('spotify-playlists-received', (event, data) => {
     spotifyPlaylists = data.items;
     renderSpotifyPlaylists();
     statusText.textContent = `Loaded ${data.items.length} playlists`;
+});
+
+// Listen for search results
+ipcRenderer.on('spotify-search-results', (event, data) => {
+    console.log('Received search results:', data.tracks.items.length);
+    const tracks = data.tracks.items.map(track => ({ track }));
+    renderSpotifyTracks(tracks);
+    statusText.textContent = `Found ${data.tracks.items.length} tracks`;
 });
 
 // Listen for playlist tracks
@@ -2438,19 +2466,25 @@ function renderSpotifyTracks(tracks) {
             downloadSpotifyTrack(track);
         });
 
-        // Add preview indicator (only if player is not available)
-        if (!track.preview_url && !spotifyPlayer) {
-            fileItem.style.opacity = '0.5';
-            const noPreviewBadge = document.createElement('span');
-            noPreviewBadge.style.cssText = 'font-size: 10px; color: #ff4444; margin-left: 5px;';
-            noPreviewBadge.textContent = '(no preview)';
-            artistDiv.appendChild(noPreviewBadge);
-        } else if (spotifyPlayer && spotifyDeviceId) {
+        // Add status indicators
+        if (spotifyPlayer && spotifyDeviceId) {
             // Add "full track" indicator when player is ready
             const fullTrackBadge = document.createElement('span');
             fullTrackBadge.style.cssText = 'font-size: 10px; color: #00ff88; margin-left: 5px;';
             fullTrackBadge.textContent = '(full track - no viz)';
             artistDiv.appendChild(fullTrackBadge);
+        } else if (track.preview_url) {
+            // Has preview available
+            const previewBadge = document.createElement('span');
+            previewBadge.style.cssText = 'font-size: 10px; color: #888; margin-left: 5px;';
+            previewBadge.textContent = '(30s preview)';
+            artistDiv.appendChild(previewBadge);
+        } else {
+            // No preview but can download
+            const downloadableBadge = document.createElement('span');
+            downloadableBadge.style.cssText = 'font-size: 10px; color: #00ff88; margin-left: 5px;';
+            downloadableBadge.textContent = '(download only)';
+            artistDiv.appendChild(downloadableBadge);
         }
 
         fileItem.appendChild(downloadBtn);

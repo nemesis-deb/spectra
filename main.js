@@ -273,6 +273,10 @@ function setupIPCHandlers() {
     getSpotifyTrackFeatures(event, trackId);
   });
 
+  ipcMain.on('spotify-search', (event, query) => {
+    searchSpotifyTracks(event, query);
+  });
+
   ipcMain.on('download-spotify-track', (event, trackInfo) => {
     downloadTrackFromYouTube(event, trackInfo);
   });
@@ -654,6 +658,39 @@ async function getSpotifyTrackFeatures(event, trackId) {
         // Retry the request
         const features = await spotifyApi.getAudioFeaturesForTrack(trackId);
         event.sender.send('spotify-track-features-received', { trackId, features: features.body });
+      } catch (refreshErr) {
+        console.error('Error refreshing token:', refreshErr);
+        event.sender.send('spotify-error', 'Session expired. Please log in again.');
+      }
+    } else {
+      event.sender.send('spotify-error', err.message);
+    }
+  }
+}
+
+async function searchSpotifyTracks(event, query) {
+  try {
+    const results = await spotifyApi.searchTracks(query, { limit: 50 });
+    event.sender.send('spotify-search-results', results.body);
+  } catch (err) {
+    console.error('Error searching Spotify:', err);
+
+    // If token expired, try to refresh
+    if (err.statusCode === 401) {
+      try {
+        console.log('Token expired, attempting refresh...');
+        const data = await spotifyApi.refreshAccessToken();
+        spotifyApi.setAccessToken(data.body['access_token']);
+
+        // Notify renderer of new token
+        event.sender.send('spotify-token-refreshed', {
+          accessToken: data.body['access_token'],
+          expiresIn: data.body['expires_in']
+        });
+
+        // Retry the request
+        const results = await spotifyApi.searchTracks(query, { limit: 50 });
+        event.sender.send('spotify-search-results', results.body);
       } catch (refreshErr) {
         console.error('Error refreshing token:', refreshErr);
         event.sender.send('spotify-error', 'Session expired. Please log in again.');
