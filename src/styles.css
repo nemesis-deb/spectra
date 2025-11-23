@@ -501,7 +501,6 @@ select {
   cursor: pointer;
   font-size: 15px;
   transition: all 0.2s;
-  min-width: 200px;
 }
 
 select:hover {
@@ -517,11 +516,12 @@ select:focus {
 
 /* Attempt to style select options (limited browser support) */
 select option {
-  padding: 12px 16px;
+  padding: 14px 16px;
   font-size: 15px;
   background: #2a2a2a;
   color: #fff;
-  min-height: 40px;
+  min-height: 45px;
+  line-height: 1.6;
 }
 
 /* Canvas */
