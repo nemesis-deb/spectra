@@ -25,3 +25,10 @@ desktop.ini
 
 # Electron
 out/
+
+# Environment variables
+.env
+.env.local
+
+# YouTube DL temporary files
+*-player-script.js

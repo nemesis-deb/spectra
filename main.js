@@ -390,62 +390,47 @@ function setupIPCHandlers() {
     try {
       console.log('[Main] Getting YouTube audio URL for:', videoId);
 
-      const { exec } = require('child_process');
-      const os = require('os');
-      const path = require('path');
+      // Use the bundled yt-dlp from youtube-dl-exec
+      const ytdlpPath = require.resolve('youtube-dl-exec').replace('index.js', 'bin/yt-dlp.exe');
 
-      // Path to yt-dlp
-      const ytdlpPath = path.join(os.homedir(), '.local', 'bin', 'yt-dlp');
-
-      // Command to get best audio URL
-      const command = `"${ytdlpPath}" -f "bestaudio" --get-url --get-title --get-duration --get-thumbnail "https://www.youtube.com/watch?v=${videoId}"`;
-
-      return new Promise((resolve, reject) => {
-        exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
-          if (error) {
-            console.error('[Main] yt-dlp error:', stderr);
-            reject(new Error('Failed to extract audio URL'));
-            return;
-          }
-
-          // Filter out WARNING lines
-          const lines = stdout.trim().split('\n').filter(line => !line.startsWith('WARNING:'));
-
-          if (lines.length < 4) {
-            console.error('[Main] Invalid yt-dlp output, got:', lines);
-            reject(new Error('Invalid yt-dlp output'));
-            return;
-          }
-
-          // Order from yt-dlp: title, url, thumbnail, duration
-          const [title, url, thumbnail, duration] = lines;
-
-          // Parse duration (format: HH:MM:SS or MM:SS)
-          const durationParts = duration.split(':').map(Number);
-          let durationSeconds = 0;
-          if (durationParts.length === 3) {
-            durationSeconds = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
-          } else if (durationParts.length === 2) {
-            durationSeconds = durationParts[0] * 60 + durationParts[1];
-          }
-
-          console.log('[Main] Successfully extracted audio URL');
-
-          resolve({
-            url: url,
-            title: title,
-            duration: durationSeconds,
-            thumbnail: thumbnail
-          });
-        });
+      // Get video info using youtube-dl-exec
+      const result = await youtubedl(`https://www.youtube.com/watch?v=${videoId}`, {
+        dumpSingleJson: true,
+        noWarnings: true,
+        noCallHome: true,
+        noCheckCertificate: true,
+        preferFreeFormats: true,
+        youtubeSkipDashManifest: true,
+        extractorArgs: 'youtube:player_client=default'
       });
+
+      // Find best audio format
+      const audioFormats = result.formats.filter(f => 
+        f.acodec && f.acodec !== 'none' && (!f.vcodec || f.vcodec === 'none')
+      );
+
+      if (audioFormats.length === 0) {
+        throw new Error('No audio formats available');
+      }
+
+      // Sort by quality (bitrate)
+      audioFormats.sort((a, b) => (b.abr || 0) - (a.abr || 0));
+      const bestAudio = audioFormats[0];
+
+      console.log('[Main] Successfully extracted audio URL');
+
+      return {
+        url: bestAudio.url,
+        title: result.title,
+        duration: result.duration,
+        thumbnail: result.thumbnail
+      };
 
     } catch (error) {
       console.error('[Main] Error getting YouTube audio:', error);
       throw error;
     }
   });
-
 }
 
 app.whenReady().then(() => {
