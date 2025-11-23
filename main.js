@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const DiscordRPC = require('discord-rpc');
 const SpotifyWebApi = require('spotify-web-api-node');
+const jsmediatags = require('jsmediatags');
 
 // Global error handlers
 process.on('uncaughtException', (error) => {
@@ -10,6 +11,19 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled rejection in main process:', reason);
 });
+
+// Note: Spotify integration is for metadata/playlists only (no DRM playback)
+// Widevine/DRM support removed - using local file playback only
+
+// Suppress GPU-related warnings
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+
+// Reduce console spam
+if (process.env.NODE_ENV !== 'development') {
+  app.commandLine.appendSwitch('disable-logging');
+}
 
 let mainWindow;
 let rpcClient = null;
@@ -32,38 +46,41 @@ function createWindow() {
     minWidth: 1000,
     minHeight: 700,
     backgroundColor: '#1a1a1a',
-    icon: 'icon_nobg.png',
+    icon: 'icon.png',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true,
-      plugins: true // Enable plugins for Widevine DRM
+      enableRemoteModule: true
     }
   });
 
   mainWindow.loadFile('index.html');
-  // mainWindow.webContents.openDevTools(); // Uncomment for debugging
-
-  // Check if Widevine is available (needed for Spotify Premium playback) - deferred for faster startup
+  
+  // Check if dev tools should open on startup
   mainWindow.webContents.on('did-finish-load', () => {
-    setTimeout(() => {
-      console.log('Checking Widevine DRM support...');
-      mainWindow.webContents.executeJavaScript(`
-        navigator.requestMediaKeySystemAccess('com.widevine.alpha', [{
-          initDataTypes: ['cenc'],
-          videoCapabilities: [{contentType: 'video/mp4; codecs="avc1.42E01E"'}],
-          audioCapabilities: [{contentType: 'audio/mp4; codecs="mp4a.40.2"'}]
-        }]).then(() => {
-          console.log('Widevine DRM is available');
-          return true;
-        }).catch((err) => {
-          console.warn('Widevine DRM not available:', err);
-          return false;
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const userDataPath = app.getPath('userData');
+      const settingsPath = path.join(userDataPath, 'audioVisualizerSettings.json');
+      
+      // Try to read settings from localStorage equivalent
+      mainWindow.webContents.executeJavaScript('localStorage.getItem("audioVisualizerSettings")')
+        .then(settingsStr => {
+          if (settingsStr) {
+            const settings = JSON.parse(settingsStr);
+            if (settings.openDevToolsOnStartup === true) {
+              mainWindow.webContents.openDevTools();
+              console.log('DevTools opened automatically (setting enabled)');
+            }
+          }
+        })
+        .catch(err => {
+          console.log('Could not check DevTools setting:', err.message);
         });
-      `).then(result => {
-        console.log('Widevine check result:', result);
-      });
-    }, 2000);
+    } catch (error) {
+      console.log('Error checking DevTools setting:', error.message);
+    }
   });
 }
 
@@ -237,6 +254,109 @@ function setupIPCHandlers() {
   ipcMain.on('spotify-get-track-features', (event, trackId) => {
     getSpotifyTrackFeatures(event, trackId);
   });
+
+  // Album art extraction
+  ipcMain.handle('extract-album-art', async (event, filePath) => {
+    console.log('[Main] Extracting album art from:', filePath);
+    return new Promise((resolve) => {
+      jsmediatags.read(filePath, {
+        onSuccess: (tag) => {
+          console.log('[Main] Tags read successfully');
+          const picture = tag.tags.picture;
+          if (picture) {
+            console.log('[Main] Album art found! Format:', picture.format, 'Size:', picture.data.length);
+            // Convert picture data to Buffer
+            const data = new Uint8Array(picture.data);
+            const format = picture.format;
+
+            resolve({
+              data: Array.from(data), // Convert to regular array for IPC
+              format: format
+            });
+          } else {
+            console.log('[Main] No picture tag found');
+            resolve(null);
+          }
+        },
+        onError: (error) => {
+          console.error('[Main] Error extracting album art:', error);
+          resolve(null);
+        }
+      });
+    });
+  });
+
+  // Extract metadata (title, artist, album)
+  ipcMain.handle('extract-metadata', async (event, filePath) => {
+    return new Promise((resolve) => {
+      jsmediatags.read(filePath, {
+        onSuccess: (tag) => {
+          const tags = tag.tags;
+          resolve({
+            title: tags.title || null,
+            artist: tags.artist || null,
+            album: tags.album || null
+          });
+        },
+        onError: (error) => {
+          console.error('[Main] Error extracting metadata:', error);
+          resolve({ title: null, artist: null, album: null });
+        }
+      });
+    });
+  });
+
+  // Save preset (.spk file)
+  ipcMain.handle('save-preset', async (event, data) => {
+    try {
+      const result = await dialog.showSaveDialog(mainWindow, {
+        title: 'Save Spectra Preset',
+        defaultPath: data.fileName,
+        filters: [
+          { name: 'Spectra Preset', extensions: ['spk'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      });
+
+      if (!result.canceled && result.filePath) {
+        const fs = require('fs');
+        fs.writeFileSync(result.filePath, data.content, 'utf8');
+        console.log('[Main] Preset saved:', result.filePath);
+        return { success: true, path: result.filePath };
+      } else {
+        return { success: false, error: 'Save cancelled' };
+      }
+    } catch (error) {
+      console.error('[Main] Error saving preset:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // Load preset (.spk file)
+  ipcMain.handle('load-preset', async (event) => {
+    try {
+      const result = await dialog.showOpenDialog(mainWindow, {
+        title: 'Load Spectra Preset',
+        filters: [
+          { name: 'Spectra Preset', extensions: ['spk'] },
+          { name: 'All Files', extensions: ['*'] }
+        ],
+        properties: ['openFile']
+      });
+
+      if (!result.canceled && result.filePaths.length > 0) {
+        const fs = require('fs');
+        const content = fs.readFileSync(result.filePaths[0], 'utf8');
+        console.log('[Main] Preset loaded:', result.filePaths[0]);
+        return { success: true, content: content, path: result.filePaths[0] };
+      } else {
+        return { success: false, error: 'Load cancelled' };
+      }
+    } catch (error) {
+      console.error('[Main] Error loading preset:', error);
+      return { success: false, error: error.message };
+    }
+  });
 }
 
 app.whenReady().then(() => {
@@ -265,6 +385,7 @@ app.on('activate', () => {
 
 // Initialize Discord Rich Presence
 function initDiscordRPC() {
+  DiscordRPC.register(clientId);
   rpcClient = new DiscordRPC.Client({ transport: 'ipc' });
 
   rpcClient.on('ready', () => {
@@ -300,7 +421,14 @@ function setActivity(data) {
     activity.endTimestamp = data.endTimestamp;
   }
 
-  rpcClient.setActivity(activity).catch(err => {
+  // Set activity with type 2 for "Listening"
+  rpcClient.request('SET_ACTIVITY', {
+    pid: process.pid,
+    activity: {
+      ...activity,
+      type: 2 // 0 = Playing, 1 = Streaming, 2 = Listening, 3 = Watching
+    }
+  }).catch(err => {
     console.error('Failed to set Discord activity:', err);
   });
 }

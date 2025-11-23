@@ -2,7 +2,7 @@
 
 A beautiful real-time audio visualizer built with Electron, featuring multiple visualization modes, beat detection, BPM analysis, and Discord Rich Presence integration.
 
-![Spectra](icon_nobg.png)
+![Spectra](icon.png)
 
 ## Features
 
@@ -129,7 +129,8 @@ spectra/
 ├── renderer.js          # Renderer process & visualizers
 ├── index.html           # UI layout
 ├── package.json         # Dependencies & build config
-├── icon_nobg.png        # App icon
+├── icon.png             # App icon (no background)
+├── icon-bg.png          # App icon (with background)
 └── README.md           # This file
 ```
 

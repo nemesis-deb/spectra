@@ -148,6 +148,36 @@ export class FileManager {
         });
     }
 
+    // Group files by folder
+    getGroupedFiles() {
+        if (!this.includeSubfolders) {
+            // No grouping needed if not using subfolders
+            return null;
+        }
+
+        const grouped = new Map();
+        
+        this.audioFiles.forEach(file => {
+            const folderPath = path.dirname(file.path);
+            const folderName = path.basename(folderPath);
+            
+            if (!grouped.has(folderPath)) {
+                grouped.set(folderPath, {
+                    name: folderName,
+                    path: folderPath,
+                    files: []
+                });
+            }
+            
+            grouped.get(folderPath).files.push(file);
+        });
+
+        // Convert to array and sort by folder name
+        return Array.from(grouped.values()).sort((a, b) => 
+            a.name.localeCompare(b.name)
+        );
+    }
+
     // Set include subfolders option
     setIncludeSubfolders(include) {
         this.includeSubfolders = include;

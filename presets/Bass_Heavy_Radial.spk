@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "name": "Radial Bars",
+  "timestamp": "2025-11-23T12:00:00.000Z",
+  "visualizer": {
+    "type": "Radial Bars",
+    "settings": {
+      "barCount": 64,
+      "rotation": 0,
+      "frequencyStart": 0,
+      "frequencyEnd": 35
+    }
+  },
+  "global": {
+    "primaryColor": "#ff0066",
+    "bgColor": "#000000",
+    "lineWidth": 3,
+    "smoothing": 0.7,
+    "sensitivity": 1.8,
+    "mirrorEffect": false,
+    "beatDetection": true,
+    "beatFlashIntensity": 0.8,
+    "beatFlashDuration": 0.88
+  }
+}

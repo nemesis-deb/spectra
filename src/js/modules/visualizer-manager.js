@@ -43,6 +43,14 @@ class VisualizerManager {
     getCurrent() {
         return this.currentVisualizer;
     }
+
+    getCurrentName() {
+        return this.currentVisualizer ? this.currentVisualizer.name : null;
+    }
+
+    get(name) {
+        return this.visualizers.get(name);
+    }
 }
 
 module.exports = VisualizerManager;

@@ -31,8 +31,8 @@ audio-visualizer/
 │   └── ADVANCED_FEATURES_TODO.md
 │
 └── assets/                 # Images and icons
-    ├── icon.png
-    └── icon_nobg.png
+    ├── icon.png            # App icon (no background)
+    └── icon-bg.png         # App icon (with background)
 ```
 
 ## Current Organization

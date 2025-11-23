@@ -20,7 +20,8 @@ export class DiscordRPC {
             audioBuffer = null,
             audioContext = null,
             startTime = 0,
-            parseFileName = null
+            parseFileName = null,
+            metadata = null
         } = data;
 
         // No song playing
@@ -35,11 +36,31 @@ export class DiscordRPC {
             return;
         }
 
-        // Parse filename if parser provided
-        const parsed = parseFileName ? parseFileName(currentFile.name) : { title: currentFile.name, hasArtist: false };
+        // Use metadata if available, otherwise parse filename
+        let songName;
+        let albumInfo = '';
+        
+        if (metadata && (metadata.title || metadata.artist)) {
+            const title = metadata.title || parseFileName(currentFile.name).title;
+            const artist = metadata.artist;
+            const album = metadata.album;
+            
+            if (artist) {
+                songName = `${artist} - ${title}`;
+            } else {
+                songName = title;
+            }
+            
+            if (album) {
+                albumInfo = ` (${album})`;
+            }
+        } else {
+            // Fallback to filename parsing
+            const parsed = parseFileName ? parseFileName(currentFile.name) : { title: currentFile.name, hasArtist: false };
+            songName = parsed.hasArtist ? `${parsed.artist} - ${parsed.title}` : parsed.title;
+        }
 
-        const songName = parsed.hasArtist ? `${parsed.artist} - ${parsed.title}` : parsed.title;
-        const details = isPlaying ? `Listening to ${songName}` : `Paused`;
+        const details = isPlaying ? `${songName}${albumInfo}` : `Paused: ${songName}`;
         const state = `Using ${visualizerName}`;
 
         const presenceData = {

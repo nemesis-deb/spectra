@@ -11,7 +11,9 @@ class Settings {
             beatDetection: true,
             beatFlashIntensity: 0.3,
             beatFlashDuration: 0.92,
-            gpuAcceleration: true
+            gpuAcceleration: true,
+            useCamelotNotation: true,
+            openDevToolsOnStartup: false
         };
     }
 

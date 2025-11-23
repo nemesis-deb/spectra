@@ -1,17 +1,18 @@
 {
   "name": "spectra",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A beautiful audio visualizer app with multiple visualization modes and customization options.",
   "main": "main.js",
   "scripts": {
-    "start": "electron . --no-sandbox",
+    "start": "electron . --no-sandbox --disable-gpu-sandbox",
+    "start:quiet": "cross-env ELECTRON_ENABLE_LOGGING=0 electron . --no-sandbox --disable-gpu-sandbox",
     "build": "electron-builder",
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Your Name",
+  "author": "Katuyo",
   "license": "MIT",
   "devDependencies": {
     "electron": "^28.0.0",
@@ -27,7 +28,28 @@
       "main.js",
       "index.html",
       "src/**/*",
-      "package.json"
+      "package.json",
+      "spk-icon.ico",
+      "presets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "spk-icon.ico",
+        "to": "spk-icon.ico"
+      },
+      {
+        "from": "presets",
+        "to": "presets"
+      }
+    ],
+    "fileAssociations": [
+      {
+        "ext": "spk",
+        "name": "Spectra Preset",
+        "description": "Spectra Visualizer Preset File",
+        "icon": "spk-icon.ico",
+        "role": "Editor"
+      }
     ],
     "win": {
       "target": [
@@ -49,7 +71,7 @@
         "AppImage",
         "deb"
       ],
-      "icon": "build/icon_nobg.png",
+      "icon": "build/icon.png",
       "category": "Audio"
     },
     "nsis": {
@@ -62,6 +84,7 @@
   "dependencies": {
     "@electron/remote": "^2.1.3",
     "discord-rpc": "^4.0.1",
+    "jsmediatags": "^3.9.7",
     "spotify-web-api-node": "^5.0.2",
     "three": "^0.181.2",
     "web-audio-beat-detector": "^8.2.31"

@@ -6,7 +6,10 @@ export class StarfieldVisualizer extends Visualizer {
         super('Starfield');
         this.settings = {
             starCount: 200,
-            speed: 1.0
+            speed: 1.0,
+            haloFreqStart: 25,  // % of frequency range (mids/vocals)
+            haloFreqEnd: 75,    // % of frequency range
+            haloIntensity: 1.0  // Multiplier for halo brightness
         };
         this.stars = [];
         this.initStars();
@@ -113,6 +116,52 @@ export class StarfieldVisualizer extends Visualizer {
 
         this.ctx.shadowBlur = 0;
 
+        // Center halo reactive to custom frequency range
+        const startIdx = Math.floor((this.settings.haloFreqStart / 100) * this.frequencyData.length);
+        const endIdx = Math.floor((this.settings.haloFreqEnd / 100) * this.frequencyData.length);
+        
+        let haloFreqSum = 0;
+        for (let i = startIdx; i < endIdx; i++) {
+            haloFreqSum += this.frequencyData[i];
+        }
+        const haloFreqAvg = haloFreqSum / (endIdx - startIdx) / 255;
+        
+        const haloIntensity = Math.pow(haloFreqAvg, 1.5) * this.settings.haloIntensity; // Non-linear response for more dramatic effect
+        
+        if (haloIntensity > 0.15) {
+            // Inner glow - bright core
+            const innerRadius = 20 + haloIntensity * 40;
+            const outerRadius = 60 + haloIntensity * 120;
+            
+            const haloGradient = this.ctx.createRadialGradient(
+                centerX + shakeX, centerY + shakeY, 0,
+                centerX + shakeX, centerY + shakeY, outerRadius
+            );
+            
+            // Bright center that pulses with vocals
+            haloGradient.addColorStop(0, this.hexToRgba(settings.primaryColor, haloIntensity * 0.8));
+            haloGradient.addColorStop(0.3, this.hexToRgba(settings.primaryColor, haloIntensity * 0.5));
+            haloGradient.addColorStop(0.6, this.hexToRgba(settings.primaryColor, haloIntensity * 0.2));
+            haloGradient.addColorStop(1, this.hexToRgba(settings.primaryColor, 0));
+            
+            this.ctx.fillStyle = haloGradient;
+            this.ctx.beginPath();
+            this.ctx.arc(centerX + shakeX, centerY + shakeY, outerRadius, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Add extra glow ring on strong vocals
+            if (haloIntensity > 0.5) {
+                this.ctx.strokeStyle = this.hexToRgba(settings.primaryColor, (haloIntensity - 0.5) * 0.6);
+                this.ctx.lineWidth = 2 + haloIntensity * 3;
+                this.ctx.shadowBlur = 15 * haloIntensity;
+                this.ctx.shadowColor = settings.primaryColor;
+                this.ctx.beginPath();
+                this.ctx.arc(centerX + shakeX, centerY + shakeY, innerRadius + haloIntensity * 20, 0, Math.PI * 2);
+                this.ctx.stroke();
+                this.ctx.shadowBlur = 0;
+            }
+        }
+
         // Add radial burst effect on heavy bass
         if (bass > 0.8) {
             const gradient = this.ctx.createRadialGradient(
@@ -154,6 +203,33 @@ export class StarfieldVisualizer extends Visualizer {
                 max: 3,
                 step: 0.1,
                 value: this.settings.speed
+            },
+            {
+                key: 'haloFreqStart',
+                label: 'Halo Freq Start %',
+                type: 'range',
+                min: 0,
+                max: 100,
+                step: 5,
+                value: this.settings.haloFreqStart
+            },
+            {
+                key: 'haloFreqEnd',
+                label: 'Halo Freq End %',
+                type: 'range',
+                min: 0,
+                max: 100,
+                step: 5,
+                value: this.settings.haloFreqEnd
+            },
+            {
+                key: 'haloIntensity',
+                label: 'Halo Intensity',
+                type: 'range',
+                min: 0,
+                max: 2,
+                step: 0.1,
+                value: this.settings.haloIntensity
             }
         ];
     }

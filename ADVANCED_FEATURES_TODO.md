@@ -2,7 +2,15 @@
 
 This document outlines advanced features to be implemented in the Audio Visualizer.
 
-## 🎉 Recent Accomplishments (November 2025)
+## 🎉 Recent Accomplishments (January 2025)
+
+### Major Visualizer Update Complete!
+- ✅ **Added 5 new visualizers** (Kaleidoscope, DNA Helix, Starfield, Tunnel, Fireworks)
+- ✅ **Total visualizers: 13** (8 original + 5 new)
+- ✅ **WebGL/Three.js integration** for GPU-accelerated 3D visualizers
+- ✅ **Fixed GPU acceleration** - removed --disable-gpu flag
+- ✅ **Trail effects** with proper GPU acceleration
+- ✅ **Enhanced music reactivity** across all visualizers
 
 ### Major Refactoring Complete!
 - ✅ **Extracted 8 visualizers** to separate ES6 modules
@@ -14,12 +22,18 @@ This document outlines advanced features to be implemented in the Audio Visualiz
 ### Features Completed
 - ✅ **Beat Detection** with BPM-based timing
 - ✅ **BPM Detection** with live display
-- ✅ **GPU Acceleration** toggle for better performance
+- ✅ **Key Detection** with chromagram analysis (Camelot notation)
+- ✅ **Preset System** - Save/load visualizer configs as .spk files
+- ✅ **GPU Acceleration** toggle for better performance (FIXED!)
 - ✅ **Recursive folder scanning** with subfolder toggle
 - ✅ **Discord Rich Presence** with accurate timestamps
-- ✅ **Spotify Integration** (partial - module created)
+- ✅ **Spotify Integration** (metadata/playlists only - no DRM playback)
 - ✅ **Custom Settings Modal** with organized sections
 - ✅ **Custom UI Controls** (dropdowns, checkboxes, sliders)
+- ✅ **Frequency range customization** for Radial Bars
+- ✅ **Enhanced Starfield** with vocal-reactive center halo
+
+**Note on Spotify:** Integration provides playlist browsing and metadata (BPM, key, artist, etc.) but does NOT play Spotify tracks directly due to DRM limitations. Use it to discover music and get track info, then play matching local files for visualization.
 
 ---
 
@@ -99,25 +113,28 @@ This document outlines advanced features to be implemented in the Audio Visualiz
 - [ ] Add accessibility settings panel
 - [ ] Test with high-energy visualizations
 
-### Phase 9: Waveform History (Ghost Effect)
-- [ ] Store previous waveform frames in buffer
-- [ ] Render trailing waveforms with decreasing opacity
-- [ ] Add trail length setting (2-10 frames)
-- [ ] Create trail fade speed control
+### Phase 9: Waveform History (Ghost Effect) ✅ COMPLETED
+- [x] Store previous waveform frames in buffer
+- [x] Render trailing waveforms with decreasing opacity
+- [x] Add trail length setting (0-20 frames) - **Kaleidoscope visualizer**
+- [x] Create trail fade speed control (GPU-accelerated)
+- [x] Optimize memory usage (WebGL preserveDrawingBuffer)
+- [x] Test with Kaleidoscope visualizer
 - [ ] Add color shift option for trails
-- [ ] Optimize memory usage
-- [ ] Test with all visualizers
+- [ ] Extend to other visualizers
 
-### Phase 10: 3D Visualizers
-- [ ] Set up Three.js or WebGL context
+### Phase 10: 3D Visualizers ✅ PARTIALLY COMPLETED
+- [x] Set up Three.js or WebGL context
+- [x] Create 3D tunnel visualizer (Tunnel - pulsing rings)
+- [x] Create 3D helix visualizer (DNA Helix - rotating double helix)
+- [x] Create 3D kaleidoscope visualizer (symmetrical particles)
+- [x] Implement lighting effects (ambient + point lights)
+- [x] Add particle system in 3D space (Kaleidoscope)
+- [x] Optimize for performance (GPU acceleration, instancing)
 - [ ] Create 3D cube visualizer
 - [ ] Create 3D sphere visualizer
-- [ ] Create 3D tunnel visualizer
 - [ ] Add camera controls (rotation, zoom)
-- [ ] Implement lighting effects
-- [ ] Add particle system in 3D space
 - [ ] Create 3D spectrum bars
-- [ ] Optimize for performance
 - [ ] Add fallback for unsupported devices
 
 ---
@@ -135,9 +152,13 @@ This document outlines advanced features to be implemented in the Audio Visualiz
 - [x] **BONUS:** Spotify BPM integration
 - [x] **BONUS:** Extracted to BPMDetector module
 
-### Phase 12: Key Detection
-- [ ] Implement musical key detection algorithm
-- [ ] Display key in UI (C major, A minor, etc.)
+### Phase 12: Key Detection ✅ COMPLETED
+- [x] Implement musical key detection algorithm (Krumhansl-Schmuckler chromagram analysis)
+- [x] Display key in UI (C major, A minor, etc.)
+- [x] Spotify key integration (automatic from track features)
+- [x] Manual key setting support
+- [x] Confidence calculation
+- [x] **BONUS:** Extracted to KeyDetector module for better organization
 - [ ] Add key change detection
 - [ ] Create key-based color schemes
 - [ ] Cache detected keys
@@ -387,8 +408,11 @@ This document outlines advanced features to be implemented in the Audio Visualiz
 - [x] Add GPU acceleration toggle (in Settings > Performance)
 - [x] Implement CSS-based GPU acceleration (transform: translateZ(0))
 - [x] Create performance monitoring (enabled by default)
+- [x] **FIXED: Removed --disable-gpu flag** (was forcing CPU rendering!)
+- [x] Enhanced GPU hints (perspective, willChange, etc.)
+- [x] WebGL/Three.js integration for true GPU utilization
 - [ ] Add GPU usage indicator
-- [x] Test performance difference (significant improvement in neon mode!)
+- [x] Test performance difference (massive improvement after fix!)
 - [x] Add auto-detect best mode (enabled by default)
 
 ### Phase 37: FPS Limiter
@@ -525,6 +549,37 @@ For each feature:
 
 ---
 
-**Last Updated**: 2025-01-22
-**Total Features**: 43 major features
+## 🎨 New Visualizers Added (January 2025)
+
+### 2D Visualizers (3)
+1. **Kaleidoscope** (WebGL) - Symmetrical mandala patterns with 10+ customization options
+   - Particle shapes: sphere, cube, cone, torus
+   - Trail effects (0-20 length)
+   - Bloom intensity control
+   - Depth and spread customization
+2. **Starfield** - Enhanced space flight with music reactivity
+   - Bass controls speed
+   - Mids control size
+   - Highs control brightness
+   - Camera shake on heavy bass
+3. **Fireworks** - Beat-reactive particle explosions
+   - Automatic beat detection
+   - Gravity and physics simulation
+   - Customizable sensitivity
+
+### 3D Visualizers (2)
+4. **DNA Helix** - Rotating double helix structure
+   - Audio-reactive spheres
+   - Connecting bars
+   - Customizable height and speed
+5. **Tunnel** - Infinite tunnel effect
+   - Pulsing rings
+   - Audio-reactive scaling
+   - Fog effects
+
+---
+
+**Last Updated**: 2025-01-23
+**Total Features**: 43 major features (8 completed/partially completed)
+**Completed This Session**: 5 new visualizers, GPU acceleration fix, trail effects
 **Estimated Development Time**: 6-12 months (depending on team size)

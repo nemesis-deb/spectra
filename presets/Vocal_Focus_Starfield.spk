@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "name": "Starfield",
+  "timestamp": "2025-11-23T12:00:00.000Z",
+  "visualizer": {
+    "type": "Starfield",
+    "settings": {
+      "starCount": 300,
+      "speed": 1.2,
+      "haloFreqStart": 40,
+      "haloFreqEnd": 80,
+      "haloIntensity": 1.5
+    }
+  },
+  "global": {
+    "primaryColor": "#00ff88",
+    "bgColor": "#000000",
+    "lineWidth": 2,
+    "smoothing": 0.8,
+    "sensitivity": 1.2,
+    "mirrorEffect": false,
+    "beatDetection": true,
+    "beatFlashIntensity": 0.4,
+    "beatFlashDuration": 0.92
+  }
+}

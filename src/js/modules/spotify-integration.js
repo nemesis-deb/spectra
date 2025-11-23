@@ -7,8 +7,8 @@ export class SpotifyIntegration {
         this.playlists = [];
         this.currentPlaylist = null;
         this.currentTrack = null;
-        this.isSpotifyMode = false;
-        this.player = null;
+        // Note: Spotify integration is for metadata/playlists only
+        // Actual playback uses local files
         
         this.setupEventListeners();
         this.restoreSession();
@@ -38,7 +38,7 @@ export class SpotifyIntegration {
             localStorage.setItem('spotifyUser', JSON.stringify(data.user));
             
             this.updateUILoggedIn(data.user);
-            this.initPlayer(data.accessToken);
+            console.log('Spotify connected - metadata and playlists available');
         });
 
         // Auth error
@@ -112,19 +112,16 @@ export class SpotifyIntegration {
         ipcRenderer.send('spotify-get-playlist-tracks', playlistId);
     }
 
-    // Play track
-    playTrack(trackUri) {
-        if (!this.player || !this.accessToken) return;
-        console.log('Playing Spotify track:', trackUri);
-        ipcRenderer.send('spotify-play-track', { trackUri, accessToken: this.accessToken });
+    // Get track features (BPM, key, etc.)
+    getTrackFeatures(trackId) {
+        if (!this.accessToken) return;
+        console.log('Getting track features for:', trackId);
+        ipcRenderer.send('spotify-get-track-features', trackId);
     }
 
-    // Initialize Spotify Web Playback SDK
-    initPlayer(accessToken) {
-        // Player initialization would go here
-        // This is complex and depends on the Spotify SDK
-        console.log('Spotify player initialization...');
-    }
+    // Note: Direct Spotify playback is not supported
+    // Use this integration to browse playlists and get metadata (BPM, key)
+    // Then play matching local files for visualization
 
     // Update UI when logged in
     updateUILoggedIn(user) {
@@ -150,11 +147,10 @@ export class SpotifyIntegration {
         return this.currentPlaylist;
     }
 
-    setSpotifyMode(enabled) {
-        this.isSpotifyMode = enabled;
-    }
-
-    isInSpotifyMode() {
-        return this.isSpotifyMode;
+    // Get track info by ID
+    getTrackInfo(trackId) {
+        return this.currentPlaylist?.tracks?.items?.find(
+            item => item.track.id === trackId
+        )?.track;
     }
 }

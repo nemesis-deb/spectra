@@ -16,7 +16,10 @@ import { FireworksVisualizer } from './visualizers/fireworks.js';
 import { FileManager } from './modules/file-manager.js';
 import { DiscordRPC } from './modules/discord-rpc.js';
 import { BPMDetector } from './modules/bpm-detector.js';
+import { KeyDetector } from './modules/key-detector.js';
 import { SpotifyIntegration } from './modules/spotify-integration.js';
+import { AlbumArtManager } from './modules/album-art.js';
+import { PresetManager } from './modules/preset-manager.js';
 
 console.log('Renderer process loaded!');
 
@@ -41,7 +44,57 @@ const path = require('path');
 const fileManager = new FileManager();
 const discordRPC = new DiscordRPC();
 const bpmDetector = new BPMDetector();
+const keyDetector = new KeyDetector();
 const spotify = new SpotifyIntegration();
+const albumArtManager = new AlbumArtManager();
+const presetManager = new PresetManager();
+
+// Metadata cache
+const metadataCache = new Map();
+
+// Performance monitoring
+let performanceStats = {
+    fps: 0,
+    memory: 0,
+    gpu: 'N/A'
+};
+
+let currentStatusMessage = 'No audio source';
+
+// Update status with performance info
+function updateStatusWithPerf(message) {
+    currentStatusMessage = message;
+    const memoryMB = performanceStats.memory.toFixed(0);
+    const fps = performanceStats.fps;
+    statusText.textContent = `${message} | ${fps} FPS | ${memoryMB} MB`;
+}
+
+// Monitor performance metrics
+let lastFrameTime = performance.now();
+let frameCount = 0;
+let fpsUpdateInterval = null;
+
+function startPerformanceMonitoring() {
+    // Update FPS and memory every second
+    fpsUpdateInterval = setInterval(() => {
+        // Calculate FPS
+        performanceStats.fps = frameCount;
+        frameCount = 0;
+        
+        // Get memory usage (if available)
+        if (performance.memory) {
+            performanceStats.memory = performance.memory.usedJSHeapSize / 1048576; // Convert to MB
+        }
+        
+        // Update status display
+        updateStatusWithPerf(currentStatusMessage);
+    }, 1000);
+}
+
+// Count frames for FPS calculation
+function countFrame() {
+    frameCount++;
+}
 
 // Setup Spotify BPM callback
 spotify.onBPMReceived = (tempo) => {
@@ -160,7 +213,10 @@ const settings = {
     beatDetection: true,
     beatFlashIntensity: 0.3,
     beatFlashDuration: 0.92,
-    gpuAcceleration: true
+    gpuAcceleration: true,
+    albumArtBackground: true,
+    albumArtBlur: 20,
+    albumArtOpacity: 0.3
 };
 
 // Share settings with visualizers
@@ -172,6 +228,34 @@ const beatDecay = 0.95; // Decay rate for beat flash effect
 
 // BPM detection (now handled by bpmDetector module)
 let detectedBPM = 0; // Keep for backward compatibility
+
+// Show notification toast
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${type === 'success' ? 'rgba(0, 255, 136, 0.9)' : 'rgba(255, 68, 68, 0.9)'};
+        color: ${type === 'success' ? '#000' : '#fff'};
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
 
 // Format time in MM:SS
 function formatTime(seconds) {
@@ -195,6 +279,12 @@ async function analyzeBPM(audioBuffer) {
     updateBPMDisplay();
 }
 
+// Analyze musical key
+async function analyzeKey(audioBuffer) {
+    const result = await keyDetector.analyze(audioBuffer);
+    updateKeyDisplay();
+}
+
 // Update BPM display
 function updateBPMDisplay() {
     const bpmDisplay = document.getElementById('bpmDisplay');
@@ -209,27 +299,86 @@ function updateBPMDisplay() {
     }
 }
 
-// Update now playing display
-function updateNowPlaying(filename) {
-    const nowPlayingTitle = document.getElementById('nowPlayingTitle');
-    const nowPlayingArtist = document.getElementById('nowPlayingArtist');
-
-    if (nowPlayingTitle && nowPlayingArtist) {
-        const parsed = parseFileName(filename);
-
-        if (parsed.hasArtist) {
-            nowPlayingTitle.textContent = parsed.title;
-            nowPlayingArtist.textContent = parsed.artist;
+// Update Key display
+function updateKeyDisplay() {
+    const keyDisplay = document.getElementById('keyDisplay');
+    if (keyDisplay) {
+        const useCamelot = settings.useCamelotNotation !== false; // Default to true
+        const keyString = keyDetector.getKeyDisplay(useCamelot);
+        if (keyString && keyString !== '--') {
+            keyDisplay.textContent = keyString;
+            console.log('Key updated:', keyString, useCamelot ? '(Camelot)' : '(Standard)');
         } else {
-            nowPlayingTitle.textContent = parsed.title;
-            nowPlayingArtist.textContent = '';
+            keyDisplay.textContent = '--';
         }
     }
 }
 
+// Update now playing display
+async function updateNowPlaying(filename, filePath = null) {
+    const nowPlayingTitle = document.getElementById('nowPlayingTitle');
+    const nowPlayingArtist = document.getElementById('nowPlayingArtist');
+    const nowPlayingArt = document.getElementById('nowPlayingArt');
+
+    if (nowPlayingTitle && nowPlayingArtist) {
+        // Show placeholder from filename first
+        const parsed = parseFileName(filename);
+        nowPlayingTitle.textContent = parsed.title;
+        nowPlayingArtist.textContent = parsed.hasArtist ? parsed.artist : '';
+
+        // Load metadata if we have a file path
+        if (filePath) {
+            let metadata = metadataCache.get(filePath);
+            
+            if (!metadata) {
+                metadata = await ipcRenderer.invoke('extract-metadata', filePath);
+                metadataCache.set(filePath, metadata);
+            }
+
+            // Update with metadata
+            const title = metadata.title || parsed.title;
+            const artist = metadata.artist;
+            const album = metadata.album;
+
+            nowPlayingTitle.textContent = title;
+            
+            if (artist && album) {
+                nowPlayingArtist.textContent = `${artist} • ${album}`;
+            } else if (artist) {
+                nowPlayingArtist.textContent = artist;
+            } else if (album) {
+                nowPlayingArtist.textContent = album;
+            } else {
+                nowPlayingArtist.textContent = '';
+            }
+        }
+    }
+
+    // Update album art in now playing section
+    if (nowPlayingArt && filePath && settings.albumArtBackground) {
+        albumArtManager.extractAlbumArt(filePath).then(artUrl => {
+            if (artUrl) {
+                nowPlayingArt.innerHTML = `<img src="${artUrl}" alt="Album art">`;
+            } else {
+                nowPlayingArt.innerHTML = '<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+            }
+        });
+    }
+}
+
 // Update Discord Rich Presence (wrapper for discordRPC module)
-function updateDiscordPresence() {
+async function updateDiscordPresence() {
     const currentFile = currentFileIndex >= 0 && audioFiles.length > 0 ? audioFiles[currentFileIndex] : null;
+
+    // Get metadata if we have a current file
+    let metadata = null;
+    if (currentFile) {
+        metadata = metadataCache.get(currentFile.path);
+        if (!metadata) {
+            metadata = await ipcRenderer.invoke('extract-metadata', currentFile.path);
+            metadataCache.set(currentFile.path, metadata);
+        }
+    }
 
     discordRPC.updatePresence({
         visualizerName: visualizerManager?.currentVisualizer?.name || 'Waveform',
@@ -238,7 +387,8 @@ function updateDiscordPresence() {
         audioBuffer: audioBuffer,
         audioContext: audioContext,
         startTime: startTime,
-        parseFileName: parseFileName
+        parseFileName: parseFileName,
+        metadata: metadata
     });
 }
 
@@ -413,14 +563,75 @@ function updateQueueDisplay() {
             queueItem.classList.add('current');
         }
 
+        // Create elements
+        const numberSpan = document.createElement('span');
+        numberSpan.className = 'queue-item-number';
+        numberSpan.textContent = index + 1;
+
+        // Album art icon
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'file-icon';
+        iconSpan.style.width = '40px';
+        iconSpan.style.height = '40px';
+        iconSpan.style.flexShrink = '0';
+        
+        // Try to load album art
+        if (settings.albumArtBackground) {
+            albumArtManager.extractAlbumArt(file.path).then(artUrl => {
+                if (artUrl) {
+                    iconSpan.innerHTML = `<img src="${artUrl}" alt="Album art" style="width: 100%; height: 100%; object-fit: cover; border-radius: 3px;">`;
+                } else {
+                    iconSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+                }
+            });
+        } else {
+            iconSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+        }
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'file-content';
+
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'file-title';
         const parsed = parseFileName(file.name);
-        queueItem.innerHTML = `
-            <span class="queue-item-number">${index + 1}</span>
-            <div class="file-content">
-                <div class="file-title">${parsed.title}</div>
-                ${parsed.hasArtist ? `<div class="file-artist">${parsed.artist}</div>` : ''}
-            </div>
-        `;
+        titleDiv.textContent = parsed.title; // Temporary
+
+        const artistDiv = document.createElement('div');
+        artistDiv.className = 'file-artist';
+        artistDiv.style.display = 'none';
+
+        contentDiv.appendChild(titleDiv);
+        contentDiv.appendChild(artistDiv);
+        queueItem.appendChild(numberSpan);
+        queueItem.appendChild(iconSpan);
+        queueItem.appendChild(contentDiv);
+
+        // Load metadata asynchronously
+        (async () => {
+            let metadata = metadataCache.get(file.path);
+            
+            if (!metadata) {
+                metadata = await ipcRenderer.invoke('extract-metadata', file.path);
+                metadataCache.set(file.path, metadata);
+            }
+            
+            const title = metadata.title || parsed.title;
+            const artist = metadata.artist;
+            const album = metadata.album;
+
+            titleDiv.textContent = title;
+
+            if (artist || album) {
+                if (artist && album) {
+                    artistDiv.textContent = `${artist} • ${album}`;
+                } else if (artist) {
+                    artistDiv.textContent = artist;
+                } else {
+                    artistDiv.textContent = album;
+                }
+                artistDiv.style.display = 'block';
+            }
+        })();
 
         queueItem.addEventListener('click', () => {
             loadAudioFile(index);
@@ -474,7 +685,7 @@ progressBar.addEventListener('click', (e) => {
                 playNextTrack();
             } else {
                 isPlaying = false;
-                statusText.textContent = 'Playback ended';
+                updateStatusWithPerf('Ended');
                 playBtn.disabled = false;
                 pauseBtn.disabled = true;
                 updateFileSelection();
@@ -742,42 +953,89 @@ function renderFileList() {
         return;
     }
 
+    // Check if we should group by folders
+    const groupedFolders = fileManager.getGroupedFiles();
+    
+    if (groupedFolders && groupedFolders.length > 1) {
+        // Render with folder grouping
+        renderGroupedFileList(filteredFiles, groupedFolders);
+    } else {
+        // Render flat list
+        renderFlatFileList(filteredFiles);
+    }
+}
+
+function renderFlatFileList(filteredFiles) {
     filteredFiles.forEach((file) => {
         const index = audioFiles.indexOf(file);
         const fileItem = document.createElement('div');
         fileItem.className = 'file-item';
         fileItem.dataset.index = index;
 
-        const parsed = parseFileName(file.name);
-
         // Create file item HTML with artist and title
         const iconSpan = document.createElement('span');
         iconSpan.className = 'file-icon';
-        iconSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+        
+        // Try to load album art for this file
+        if (settings.albumArtBackground) {
+            albumArtManager.extractAlbumArt(file.path).then(artUrl => {
+                if (artUrl) {
+                    iconSpan.innerHTML = `<img src="${artUrl}" alt="Album art" style="width: 100%; height: 100%; object-fit: cover; border-radius: 3px;">`;
+                } else {
+                    iconSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+                }
+            });
+        } else {
+            iconSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+        }
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'file-content';
 
-        if (parsed.hasArtist) {
-            const titleDiv = document.createElement('div');
-            titleDiv.className = 'file-title';
-            titleDiv.textContent = parsed.title;
+        // Create placeholder elements
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'file-title';
+        titleDiv.textContent = parseFileName(file.name).title; // Temporary
+        contentDiv.appendChild(titleDiv);
 
-            const artistDiv = document.createElement('div');
-            artistDiv.className = 'file-artist';
-            artistDiv.textContent = parsed.artist;
-
-            contentDiv.appendChild(titleDiv);
-            contentDiv.appendChild(artistDiv);
-        } else {
-            const titleDiv = document.createElement('div');
-            titleDiv.className = 'file-title';
-            titleDiv.textContent = parsed.title;
-            contentDiv.appendChild(titleDiv);
-        }
+        const artistDiv = document.createElement('div');
+        artistDiv.className = 'file-artist';
+        artistDiv.style.display = 'none'; // Hide until we have data
+        contentDiv.appendChild(artistDiv);
 
         fileItem.appendChild(iconSpan);
         fileItem.appendChild(contentDiv);
+
+        // Load metadata asynchronously
+        (async () => {
+            // Check cache first
+            let metadata = metadataCache.get(file.path);
+            
+            if (!metadata) {
+                // Extract and cache metadata
+                metadata = await ipcRenderer.invoke('extract-metadata', file.path);
+                metadataCache.set(file.path, metadata);
+            }
+            
+            // Use metadata if available, otherwise fall back to filename parsing
+            const title = metadata.title || parseFileName(file.name).title;
+            const artist = metadata.artist;
+            const album = metadata.album;
+
+            titleDiv.textContent = title;
+
+            // Show artist and album if available
+            if (artist || album) {
+                if (artist && album) {
+                    artistDiv.textContent = `${artist} • ${album}`;
+                } else if (artist) {
+                    artistDiv.textContent = artist;
+                } else {
+                    artistDiv.textContent = album;
+                }
+                artistDiv.style.display = 'block';
+            }
+        })();
 
         fileItem.addEventListener('click', () => {
             console.log('File item clicked, index:', index, 'file:', filteredFiles[index]);
@@ -810,6 +1068,173 @@ function renderFileList() {
 
         fileBrowser.appendChild(fileItem);
     });
+}
+
+function renderGroupedFileList(filteredFiles, groupedFolders) {
+    // Group filtered files by folder
+    const filesByFolder = new Map();
+    const mainFolderPath = fileManager.getCurrentFolder();
+    
+    filteredFiles.forEach(file => {
+        const folderPath = require('path').dirname(file.path);
+        if (!filesByFolder.has(folderPath)) {
+            filesByFolder.set(folderPath, []);
+        }
+        filesByFolder.get(folderPath).push(file);
+    });
+
+    // Render each folder group
+    groupedFolders.forEach(folder => {
+        const folderFiles = filesByFolder.get(folder.path);
+        if (!folderFiles || folderFiles.length === 0) return;
+
+        const isMainFolder = folder.path === mainFolderPath;
+
+        if (isMainFolder) {
+            // Render files without folder header (flat list)
+            folderFiles.forEach(file => {
+                const index = audioFiles.indexOf(file);
+                const fileItem = createFileItem(file, index, filteredFiles, false);
+                fileBrowser.appendChild(fileItem);
+            });
+        } else {
+            // Create folder header for subfolders
+            const folderHeader = document.createElement('div');
+            folderHeader.className = 'folder-header';
+            folderHeader.innerHTML = `
+                <svg class="folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span class="folder-name">${folder.name}</span>
+                <span class="folder-count">${folderFiles.length} songs</span>
+                <svg class="folder-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            `;
+
+            // Create folder content container
+            const folderContent = document.createElement('div');
+            folderContent.className = 'folder-content';
+
+            // Add files to folder
+            folderFiles.forEach(file => {
+                const index = audioFiles.indexOf(file);
+                const fileItem = createFileItem(file, index, filteredFiles, true);
+                folderContent.appendChild(fileItem);
+            });
+
+            // Toggle folder collapse
+            folderHeader.addEventListener('click', () => {
+                folderHeader.classList.toggle('collapsed');
+                folderContent.classList.toggle('collapsed');
+            });
+
+            fileBrowser.appendChild(folderHeader);
+            fileBrowser.appendChild(folderContent);
+        }
+    });
+}
+
+function createFileItem(file, index, filteredFiles, isInSubfolder = false) {
+    const fileItem = document.createElement('div');
+    fileItem.className = isInSubfolder ? 'file-item subfolder-item' : 'file-item';
+    fileItem.dataset.index = index;
+
+    // Create file item HTML with artist and title
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'file-icon';
+    
+    // Try to load album art for this file
+    if (settings.albumArtBackground) {
+        albumArtManager.extractAlbumArt(file.path).then(artUrl => {
+            if (artUrl) {
+                iconSpan.innerHTML = `<img src="${artUrl}" alt="Album art" style="width: 100%; height: 100%; object-fit: cover; border-radius: 3px;">`;
+            } else {
+                iconSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+            }
+        });
+    } else {
+        iconSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+    }
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'file-content';
+
+    // Create placeholder elements
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'file-title';
+    titleDiv.textContent = parseFileName(file.name).title; // Temporary
+    contentDiv.appendChild(titleDiv);
+
+    const artistDiv = document.createElement('div');
+    artistDiv.className = 'file-artist';
+    artistDiv.style.display = 'none'; // Hide until we have data
+    contentDiv.appendChild(artistDiv);
+
+    fileItem.appendChild(iconSpan);
+    fileItem.appendChild(contentDiv);
+
+    // Load metadata asynchronously
+    (async () => {
+        // Check cache first
+        let metadata = metadataCache.get(file.path);
+        
+        if (!metadata) {
+            // Extract and cache metadata
+            metadata = await ipcRenderer.invoke('extract-metadata', file.path);
+            metadataCache.set(file.path, metadata);
+        }
+        
+        // Use metadata if available, otherwise fall back to filename parsing
+        const title = metadata.title || parseFileName(file.name).title;
+        const artist = metadata.artist;
+        const album = metadata.album;
+
+        titleDiv.textContent = title;
+
+        // Show artist and album if available
+        if (artist || album) {
+            if (artist && album) {
+                artistDiv.textContent = `${artist} • ${album}`;
+            } else if (artist) {
+                artistDiv.textContent = artist;
+            } else {
+                artistDiv.textContent = album;
+            }
+            artistDiv.style.display = 'block';
+        }
+    })();
+
+    fileItem.addEventListener('click', () => {
+        console.log('File item clicked, index:', index, 'file:', filteredFiles[index]);
+        const wasPlaying = isPlaying;
+        loadAudioFile(index).then(() => {
+            console.log('loadAudioFile completed successfully');
+            // Auto-play if something was already playing
+            if (wasPlaying) {
+                setTimeout(() => playBtn.click(), 100);
+            }
+        }).catch(error => {
+            console.error('Error in file click handler:', error);
+
+            // Show user-friendly error message
+            let errorMsg = 'Error loading file';
+            if (error.message.includes('decode')) {
+                errorMsg = 'Unable to decode audio - file may be corrupted';
+            } else if (error.message.includes('not exist')) {
+                errorMsg = 'File not found';
+            }
+
+            statusText.textContent = errorMsg;
+
+            // Show alert for corrupted files
+            if (error.message.includes('decode')) {
+                alert(`Cannot play this file:\n\n${filteredFiles[index].name}\n\nThe file appears to be corrupted or in an unsupported format.`);
+            }
+        });
+    });
+
+    return fileItem;
 }
 
 // Search input handler
@@ -848,7 +1273,7 @@ async function loadAudioFile(index) {
         return;
     }
 
-    statusText.textContent = 'Loading...';
+    updateStatusWithPerf('Loading');
     console.log('Loading file:', file.name, 'from path:', file.path);
 
     try {
@@ -891,8 +1316,15 @@ async function loadAudioFile(index) {
         updateBPMDisplay();
         analyzeBPM(audioBuffer); // Async analysis in background
 
-        // Update now playing display
-        updateNowPlaying(file.name);
+        // Reset and analyze Key
+        keyDetector.reset();
+        updateKeyDisplay();
+        analyzeKey(audioBuffer); // Async analysis in background
+
+        // Update now playing display with album art
+        updateNowPlaying(file.name, file.path);
+
+        // Album art is now shown in file list icons
 
         // Update UI
         updateFileSelection();
@@ -910,9 +1342,10 @@ async function loadAudioFile(index) {
 // Update file selection UI
 function updateFileSelection() {
     const fileItems = fileBrowser.querySelectorAll('.file-item');
-    fileItems.forEach((item, index) => {
+    fileItems.forEach((item) => {
         item.classList.remove('selected', 'playing');
-        if (index === currentFileIndex) {
+        const itemIndex = parseInt(item.dataset.index);
+        if (itemIndex === currentFileIndex) {
             item.classList.add(isPlaying ? 'playing' : 'selected');
         }
     });
@@ -981,7 +1414,7 @@ playBtn.addEventListener('click', () => {
     pauseTime = 0;
 
     isPlaying = true;
-    statusText.textContent = 'Playing...';
+    updateStatusWithPerf('Playing');
     playBtn.disabled = true;
     pauseBtn.disabled = false;
     console.log('Playback started');
@@ -1003,7 +1436,7 @@ pauseBtn.addEventListener('click', () => {
         audioSource.stop();
         pauseTime = audioContext.currentTime - startTime;
         isPlaying = false;
-        statusText.textContent = 'Paused';
+        updateStatusWithPerf('Paused');
         playBtn.disabled = false;
         pauseBtn.disabled = true;
         updateFileSelection();
@@ -1083,6 +1516,18 @@ class VisualizerManager {
     getVisualizerNames() {
         return Array.from(this.visualizers.keys());
     }
+
+    getCurrent() {
+        return this.currentVisualizer;
+    }
+
+    getCurrentName() {
+        return this.currentVisualizer ? this.currentVisualizer.name : null;
+    }
+
+    get(name) {
+        return this.visualizers.get(name);
+    }
 }
 
 // Create visualizer manager and register visualizers
@@ -1112,6 +1557,9 @@ populateVisualizerSelect();
 // Main animation loop
 function animate() {
     requestAnimationFrame(animate);
+
+    // Count frame for FPS calculation
+    countFrame();
 
     // Get audio data
     analyser.getByteTimeDomainData(timeDomainData);
@@ -1147,6 +1595,78 @@ visualizerSelect.addEventListener('change', (event) => {
         updateDiscordPresence();
     }
 });
+
+// Preset buttons (setup after visualizerManager is created)
+const savePresetBtn = document.getElementById('savePresetBtnPanel');
+const loadPresetBtn = document.getElementById('loadPresetBtnPanel');
+
+if (savePresetBtn) {
+    savePresetBtn.addEventListener('click', async () => {
+        const visualizer = visualizerManager.getCurrent();
+        if (!visualizer) {
+            showNotification('No visualizer active', 'error');
+            return;
+        }
+        
+        const visualizerSettings = visualizer.settings || {};
+        const presetName = presetManager.generatePresetName(visualizer.name);
+        
+        const preset = presetManager.createPreset(visualizer.name, visualizerSettings, settings);
+        const result = await presetManager.exportPreset(preset, presetName);
+        
+        if (result.success) {
+            showNotification('Preset saved successfully!', 'success');
+        } else {
+            showNotification('Failed to save preset: ' + result.error, 'error');
+        }
+    });
+}
+
+if (loadPresetBtn) {
+    loadPresetBtn.addEventListener('click', async () => {
+        const result = await presetManager.importPreset();
+        
+        if (result.success) {
+            // Apply the preset
+            const applyResult = presetManager.applyPreset(
+                result.preset,
+                { 
+                    getCurrentVisualizerName: () => {
+                        const viz = visualizerManager.getCurrent();
+                        return viz ? viz.name : null;
+                    },
+                    getCurrentVisualizer: () => visualizerManager.getCurrent(),
+                    switchVisualizer: (name) => {
+                        if (visualizerManager.setActive(name)) {
+                            // Update dropdown to match
+                            if (visualizerSelect) {
+                                visualizerSelect.value = name;
+                            }
+                            updateCustomSettings();
+                        }
+                    }
+                },
+                {
+                    set: (key, value) => {
+                        settings[key] = value;
+                        saveSettings();
+                    }
+                }
+            );
+            
+            if (applyResult.success) {
+                // Reload UI to reflect changes
+                loadSettings();
+                updateCustomSettings();
+                showNotification('Preset loaded successfully!', 'success');
+            } else {
+                showNotification('Failed to apply preset: ' + applyResult.error, 'error');
+            }
+        } else if (result.error !== 'Load cancelled') {
+            showNotification('Failed to load preset: ' + result.error, 'error');
+        }
+    });
+}
 
 // Update custom settings panel for current visualizer
 function updateCustomSettings() {
@@ -1390,6 +1910,29 @@ if (gpuAccelerationInput) {
     });
 }
 
+// Open DevTools on Startup setting
+const openDevToolsOnStartupInput = document.getElementById('openDevToolsOnStartup');
+if (openDevToolsOnStartupInput) {
+    openDevToolsOnStartupInput.addEventListener('change', (e) => {
+        settings.openDevToolsOnStartup = e.target.checked;
+        saveSettings();
+        // Show notification that restart is required
+        showNotification('Restart app to apply DevTools setting', 'info');
+    });
+}
+
+// Album Art settings
+const albumArtBackgroundInput = document.getElementById('albumArtBackground');
+
+if (albumArtBackgroundInput) {
+    albumArtBackgroundInput.addEventListener('change', (e) => {
+        settings.albumArtBackground = e.target.checked;
+        // Re-render file list to show/hide album art
+        renderFileList();
+        saveSettings();
+    });
+}
+
 // Beat detection settings
 const beatDetectionInput = document.getElementById('beatDetection');
 const beatFlashInput = document.getElementById('beatFlash');
@@ -1411,6 +1954,16 @@ beatDurationInput.addEventListener('input', (e) => {
     document.getElementById('beatDurationValue').textContent = e.target.value;
     saveSettings();
 });
+
+// Camelot notation toggle
+const useCamelotNotationInput = document.getElementById('useCamelotNotation');
+if (useCamelotNotationInput) {
+    useCamelotNotationInput.addEventListener('change', (e) => {
+        settings.useCamelotNotation = e.target.checked;
+        saveSettings();
+        updateKeyDisplay(); // Refresh display immediately
+    });
+}
 
 // Apply or remove GPU acceleration
 function applyGPUAcceleration(enabled) {
@@ -1475,6 +2028,11 @@ function loadSettings() {
         applyGPUAcceleration(gpuEnabled);
     }
 
+    // Album Art settings
+    if (albumArtBackgroundInput) {
+        albumArtBackgroundInput.checked = settings.albumArtBackground !== false;
+    }
+
     // Beat detection settings
     if (beatDetectionInput) {
         beatDetectionInput.checked = settings.beatDetection !== false;
@@ -1482,6 +2040,16 @@ function loadSettings() {
         document.getElementById('beatFlashValue').textContent = (settings.beatFlashIntensity || 0.3).toFixed(2);
         beatDurationInput.value = settings.beatFlashDuration || 0.92;
         document.getElementById('beatDurationValue').textContent = (settings.beatFlashDuration || 0.92).toFixed(2);
+    }
+
+    // Camelot notation setting
+    if (useCamelotNotationInput) {
+        useCamelotNotationInput.checked = settings.useCamelotNotation !== false; // Default to true
+    }
+
+    // Dev tools setting
+    if (openDevToolsOnStartupInput) {
+        openDevToolsOnStartupInput.checked = settings.openDevToolsOnStartup === true;
     }
 
     console.log('Settings loaded:', settings);
@@ -1492,13 +2060,24 @@ loadSettings();
 // Apply GPU acceleration on startup (even if setting doesn't exist yet)
 applyGPUAcceleration(settings.gpuAcceleration !== false);
 
+// Start performance monitoring
+startPerformanceMonitoring();
+
 // Load last opened folder on startup (deferred to improve startup time)
 setTimeout(() => {
     const lastFolder = localStorage.getItem('lastOpenedFolder');
     if (lastFolder && fs.existsSync(lastFolder)) {
         console.log('Loading last opened folder:', lastFolder);
-        currentFolder = lastFolder;
-        loadFolder(lastFolder);
+        const result = fileManager.loadFolder(lastFolder);
+        if (result.success) {
+            audioFiles = result.files;
+            currentFolder = lastFolder;
+            updateFolderPath(lastFolder);
+            renderFileList();
+            fileCount.textContent = `${result.count} song${result.count !== 1 ? 's' : ''}`;
+            prevBtn.disabled = result.count === 0;
+            nextBtn.disabled = result.count === 0;
+        }
     }
 }, 100);
 
@@ -1726,13 +2305,23 @@ ipcRenderer.on('spotify-playlist-tracks-received', (event, data) => {
     statusText.textContent = `Loaded ${data.tracks.items.length} tracks`;
 });
 
-// Listen for track features (BPM)
+// Listen for track features (BPM and Key)
 ipcRenderer.on('spotify-track-features-received', (event, data) => {
     if (data.features && data.features.tempo) {
         bpmDetector.setBPM(data.features.tempo);
         detectedBPM = bpmDetector.getBPM(); // Sync for backward compatibility
         updateBPMDisplay();
         console.log('Spotify track BPM:', detectedBPM);
+    }
+    
+    // Spotify provides key as integer (0-11) and mode (0=minor, 1=major)
+    if (data.features && data.features.key !== undefined && data.features.mode !== undefined) {
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const key = noteNames[data.features.key];
+        const scale = data.features.mode === 1 ? 'major' : 'minor';
+        keyDetector.setKey(key, scale);
+        updateKeyDisplay();
+        console.log('Spotify track key:', keyDetector.getKeyString());
     }
 });
 

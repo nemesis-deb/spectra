@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "name": "Waveform",
+  "timestamp": "2025-11-23T12:00:00.000Z",
+  "visualizer": {
+    "type": "Waveform",
+    "settings": {}
+  },
+  "global": {
+    "primaryColor": "#ffffff",
+    "bgColor": "#000000",
+    "lineWidth": 2,
+    "smoothing": 0.85,
+    "sensitivity": 1.0,
+    "mirrorEffect": false,
+    "beatDetection": false,
+    "beatFlashIntensity": 0.3,
+    "beatFlashDuration": 0.92
+  }
+}

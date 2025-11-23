@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "name": "Spectrum",
+  "timestamp": "2025-11-23T12:00:00.000Z",
+  "visualizer": {
+    "type": "Spectrum",
+    "settings": {}
+  },
+  "global": {
+    "primaryColor": "#ff006e",
+    "bgColor": "#1a0033",
+    "lineWidth": 4,
+    "smoothing": 0.75,
+    "sensitivity": 1.4,
+    "mirrorEffect": true,
+    "beatDetection": true,
+    "beatFlashIntensity": 0.5,
+    "beatFlashDuration": 0.91
+  }
+}

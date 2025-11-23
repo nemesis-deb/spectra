@@ -15,9 +15,10 @@
 
 ### Advanced Features
 - ✅ **BPM Detection** - Automatic tempo detection with live display
+- ✅ **Key Detection** - Musical key detection with live display (C major, A minor, etc.)
 - ✅ **Beat Detection** - Visual effects synchronized to beats
 - ✅ **Discord Rich Presence** - Show what you're listening to
-- ✅ **Spotify Integration** - Connect and browse playlists (partial)
+- ✅ **Spotify Integration** - Browse playlists and get metadata (BPM & key) - metadata only, no playback
 - ✅ **GPU Acceleration** - Toggle for better performance
 - ✅ **Custom Settings** - Organized modal with multiple sections
 - ✅ **Customizable Visualizers** - Colors, line width, smoothing, sensitivity
@@ -36,7 +37,7 @@
 - ✅ BPM display in controls
 
 ### Code Quality
-- ✅ **Modular architecture** - 13 separate module files
+- ✅ **Modular architecture** - 14 separate module files
 - ✅ **ES6 modules** - Modern import/export syntax
 - ✅ **Clean separation** - Each module has single responsibility
 - ✅ **Well organized** - Clear file structure
@@ -44,7 +45,7 @@
 
 ## 🚧 In Progress / Partial
 
-- 🟡 **Spotify Integration** - Module created, needs full UI integration
+- 🟡 **Spotify Integration** - Metadata/playlists working, playback uses local files only
 - 🟡 **Custom Title Bar** - Implemented but could be enhanced
 - 🟡 **File Parsing** - Basic artist/title extraction, could be improved
 
@@ -96,11 +97,12 @@
 
 ## 🚀 Recent Wins
 
-1. **Major Refactoring** - Reduced main file by 40%
-2. **ES6 Modules** - Modern, clean architecture
-3. **GPU Acceleration** - Significant performance boost
-4. **Beat Detection** - Professional-grade feature
-5. **Discord Integration** - Social sharing capability
+1. **Key Detection** - Musical key analysis with chromagram algorithm
+2. **Major Refactoring** - Reduced main file by 40%
+3. **ES6 Modules** - Modern, clean architecture
+4. **GPU Acceleration** - Significant performance boost
+5. **Beat Detection** - Professional-grade feature
+6. **Discord Integration** - Social sharing capability
 
 ## 🐛 Known Issues
 

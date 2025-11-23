@@ -6,6 +6,9 @@
   <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
+  <!-- Album Art Background -->
+  <div id="albumArtBackground" class="album-art-background"></div>
+  
   <div class="app-container">
   <!-- Sidebar with File Navigator -->
   <div class="sidebar">
@@ -70,11 +73,13 @@
       
     <!-- Audio Controls at Top (full width) -->
     <div class="header">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2">
-        <path d="M9 18V5l12-2v13"/>
-        <circle cx="6" cy="18" r="3"/>
-        <circle cx="18" cy="16" r="3"/>
-      </svg>
+      <div id="nowPlayingArt" class="now-playing-art">
+        <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2">
+          <path d="M9 18V5l12-2v13"/>
+          <circle cx="6" cy="18" r="3"/>
+          <circle cx="18" cy="16" r="3"/>
+        </svg>
+      </div>
       <div class="now-playing-info">
         <div class="now-playing-title" id="nowPlayingTitle">No song playing</div>
         <div class="now-playing-artist" id="nowPlayingArtist"></div>
@@ -171,6 +176,7 @@
       </div>
       
       <span id="bpmDisplay" style="display: inline; color: #00ff88; font-weight: 600; margin-left: 15px; padding: 4px 8px; background: rgba(0, 255, 136, 0.1); border-radius: 3px;">-- BPM</span>
+      <span id="keyDisplay" style="display: inline; color: #00ff88; font-weight: 600; margin-left: 10px; padding: 4px 8px; background: rgba(0, 255, 136, 0.1); border-radius: 3px;">-- Key</span>
     </div>
     
     <!-- Bottom Section: Canvas + Right Panel -->
@@ -198,6 +204,26 @@
           <label>Settings</label>
           <div class="tweaks-content" id="visualizerTweaksContent">
             <p class="empty-tweaks">No custom settings</p>
+          </div>
+        </div>
+
+        <!-- Preset buttons -->
+        <div class="preset-buttons-section">
+          <div style="display: flex; gap: 6px;">
+            <button class="preset-btn-panel" id="savePresetBtnPanel" title="Save current settings as preset">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              Save
+            </button>
+            <button class="preset-btn-panel" id="loadPresetBtnPanel" title="Load preset from file">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+              </svg>
+              Load
+            </button>
           </div>
         </div>
         
@@ -290,6 +316,32 @@
           </div>
 
           <div class="settings-section">
+            <h3>Developer</h3>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="openDevToolsOnStartup">
+                  <span>Open DevTools on Startup</span>
+                </label>
+                <p style="font-size: 12px; color: #666; margin: 4px 0 0 30px;">Automatically open developer tools when app starts (requires restart)</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>Album Art</h3>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="albumArtBackground" checked>
+                  <span>Show Album Art in File List</span>
+                </label>
+                <p style="font-size: 12px; color: #666; margin: 4px 0 0 30px;">Display album art thumbnails instead of music note icons</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
             <h3>Beat Detection</h3>
             <div class="settings-grid">
               <div class="setting-item">
@@ -305,6 +357,19 @@
               <div class="setting-item">
                 <label>Flash Duration: <span id="beatDurationValue">0.92</span></label>
                 <input type="range" id="beatDuration" min="0.85" max="0.98" step="0.01" value="0.92">
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h3>Display</h3>
+            <div class="settings-grid">
+              <div class="setting-item">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="useCamelotNotation" checked>
+                  <span>Use Camelot Notation (8B, 5A)</span>
+                </label>
+                <small style="color: #888; display: block; margin-top: 4px;">Uncheck for standard notation (C major, A minor)</small>
               </div>
             </div>
           </div>
@@ -382,7 +447,7 @@
     </div>
   </div>
 
-  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+  <!-- Spotify Web Playback SDK removed - using API for metadata only -->
   <script type="module" src="src/js/renderer.js"></script>
 </body>
 </html>

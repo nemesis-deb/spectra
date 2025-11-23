@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "name": "Particles",
+  "timestamp": "2025-11-23T12:00:00.000Z",
+  "visualizer": {
+    "type": "Particles",
+    "settings": {
+      "particleCount": 120,
+      "speed": 0.8
+    }
+  },
+  "global": {
+    "primaryColor": "#00d4ff",
+    "bgColor": "#0a0a1a",
+    "lineWidth": 2,
+    "smoothing": 0.9,
+    "sensitivity": 0.8,
+    "mirrorEffect": false,
+    "beatDetection": true,
+    "beatFlashIntensity": 0.2,
+    "beatFlashDuration": 0.95
+  }
+}

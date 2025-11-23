@@ -78,9 +78,9 @@ To add a custom icon:
 
 1. Create a `build/` folder in your project root
 2. Add icon files:
-   - Windows: `icon.ico` (256x256 or larger)
-   - macOS: `icon.icns` (512x512 or larger)
-   - Linux: `icon.png` (512x512 or larger)
+   - Windows: `icon.ico` (256x256 or larger) - use icon-bg.png as source
+   - macOS: `icon.icns` (512x512 or larger) - use icon-bg.png as source
+   - Linux: `icon.png` (512x512 or larger) - use icon.png (no background)
 
 You can use online tools to convert images to these formats:
 - https://icoconvert.com/ (for .ico)
