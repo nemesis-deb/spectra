@@ -1,153 +1,436 @@
-# Spectra
+<div align="center">
 
-A beautiful real-time audio visualizer built with Electron, featuring multiple visualization modes, beat detection, BPM analysis, and Discord Rich Presence integration.
+# 🎵 Spectra
 
-![Spectra](icon.png)
+### A Beautiful Real-Time Audio Visualizer
 
-## Features
+[![Version](https://img.shields.io/github/v/release/nemesis-deb/spectra?style=for-the-badge&logo=github&color=00ff88)](https://github.com/nemesis-deb/spectra/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/nemesis-deb/spectra/total?style=for-the-badge&logo=github&color=00ff88)](https://github.com/nemesis-deb/spectra/releases)
+[![License](https://img.shields.io/github/license/nemesis-deb/spectra?style=for-the-badge&color=00ff88)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-00ff88?style=for-the-badge)](https://github.com/nemesis-deb/spectra/releases)
 
-### 🎨 8 Unique Visualizers
-- **Waveform** - Classic oscilloscope-style waveform
-- **Frequency Bars** - Traditional frequency spectrum bars
-- **Circular** - Circular frequency visualization
-- **Particles** - Dynamic particle system responding to audio
-- **Spectrum** - Colorful frequency spectrum
-- **Radial Bars** - Circular bar visualization
-- **Wave Rings** - Concentric wave patterns
-- **Oscilloscope** - XY oscilloscope mode
+**Transform your music into stunning visual experiences with 13 unique visualizers, beat detection, key detection, and more.**
 
-### 🎵 Audio Features
-- **BPM Detection** - Automatic tempo detection using web-audio-beat-detector
-- **Beat Flashing** - Visual effects synced to the beat
-- **Playback Controls** - Play, pause, next, previous, shuffle, repeat
-- **Speed Control** - Adjust playback speed (0.5x to 2x)
-- **Volume Control** - Adjustable volume with visual feedback
-- **Progress Bar** - Seek to any position in the track
+[Download](#-download) • [Features](#-features) • [Screenshots](#-screenshots) • [Documentation](#-documentation)
 
-### 🎮 Discord Integration
-- **Rich Presence** - Show what you're listening to on Discord
-- Displays current song, artist, and visualizer
-- Shows time remaining when playing
-- Updates automatically
+![Spectra Banner](icon.png)
+
+</div>
+
+---
+
+## ✨ Highlights
+
+- 🎨 **13 Unique Visualizers** - From classic waveforms to 3D WebGL effects
+- 🎵 **Key Detection** - Camelot notation for harmonic mixing (perfect for DJs!)
+- 🎯 **BPM Detection** - Automatic tempo analysis with beat-reactive effects
+- 💾 **Preset System** - Save and share your favorite visualizer configs (.spk files)
+- 🎧 **Spotify Integration** - Browse playlists and get track metadata
+- 💬 **Discord Rich Presence** - Show what you're listening to
+- ⚡ **GPU Accelerated** - Smooth 60 FPS visuals with WebGL
+- 🎨 **Fully Customizable** - Colors, sensitivity, effects, and more
+
+---
+
+## 📥 Download
+
+### Windows
+[![Download Setup](https://img.shields.io/badge/Download-Setup%20Installer-00ff88?style=for-the-badge&logo=windows)](https://github.com/nemesis-deb/spectra/releases/download/v1.0.2/Spectra-Setup-1.0.2.exe)
+[![Download Portable](https://img.shields.io/badge/Download-Portable-00ff88?style=for-the-badge&logo=windows)](https://github.com/nemesis-deb/spectra/releases/download/v1.0.2/Spectra-Portable-1.0.2.exe)
+
+### macOS & Linux
+Build from source (see [Building](#-building-from-source))
+
+**System Requirements:**
+- Windows 10+ / macOS 10.13+ / Ubuntu 18.04+
+- 4GB RAM (8GB recommended)
+- Modern GPU with OpenGL 3.3+
+
+---
+
+## 🎨 Features
+
+### 🌈 13 Stunning Visualizers
+
+<table>
+<tr>
+<td width="50%">
+
+**2D Visualizers**
+- 🌊 **Waveform** - Classic oscilloscope
+- 📊 **Frequency Bars** - Spectrum analyzer
+- ⭕ **Circular** - Circular waveform
+- ✨ **Particles** - Dynamic particle system
+- 🌈 **Spectrum** - Colorful frequency display
+- 🎯 **Radial Bars** - Circular spectrum
+- 💫 **Wave Rings** - Concentric patterns
+- 📈 **Oscilloscope** - XY mode
+
+</td>
+<td width="50%">
+
+**3D WebGL Visualizers**
+- 🔮 **Kaleidoscope** - Symmetrical mandala
+- 🧬 **DNA Helix** - Rotating double helix
+- ⭐ **Starfield** - Space flight effect
+- 🌀 **Tunnel** - Infinite tunnel
+- 🎆 **Fireworks** - Beat-reactive explosions
+
+</td>
+</tr>
+</table>
+
+### 🎵 Audio Analysis
+
+- **🎹 Key Detection** - Musical key with Camelot notation (8B, 5A, etc.)
+- **🥁 BPM Detection** - Automatic tempo analysis
+- **💥 Beat Detection** - Visual effects synced to beats
+- **🎚️ Frequency Analysis** - Real-time spectrum analysis
+- **🎼 Spotify Integration** - Automatic BPM & key from Spotify
+
+### 💾 Preset System
+
+- **Save Presets** - Export your visualizer configs as `.spk` files
+- **Load Presets** - Import presets with one click
+- **8 Demo Presets** - Vocal Focus, Bass Heavy, Chill Vibes, and more
+- **Share Presets** - Portable JSON format for easy sharing
 
 ### 🎛️ Customization
-- **Color Themes** - Customize primary color and background
-- **Visualizer Settings** - Each visualizer has unique settings
-- **Beat Detection** - Adjustable flash intensity and duration
-- **Smoothing & Sensitivity** - Fine-tune the visualization
-- **Mirror Effect** - Optional mirrored visualization
 
-### 📁 File Management
-- **Folder Browser** - Browse and load music folders
-- **Search** - Filter songs by title or artist
-- **Queue View** - See and manage your playlist
-- **Auto-load** - Remembers last opened folder
-- **Format Support** - MP3, WAV, OGG, FLAC, M4A, AAC, WMA
+- **🎨 Color Themes** - Customize primary and background colors
+- **📏 Visualizer Settings** - Each visualizer has unique controls
+- **🔊 Audio Tuning** - Smoothing, sensitivity, frequency ranges
+- **✨ Effects** - Mirror effect, beat flash, GPU acceleration
+- **📁 Folder Grouping** - Organized subfolder display
 
-### 🎵 Spotify Integration
-- **Connect your Spotify Account** - OAuth 2.0 secure authentication
-- **Access your Playlists** - Browse all your public and private playlists
-- **Automatic BPM Detection** - Uses Spotify's audio analysis
-- **Album Artwork** - Beautiful playlist and track covers
-- **30-second Previews** - Listen to track previews with full visualization
+### 🎧 Playback Features
 
-## Installation
+- **📂 Folder Browser** - Load entire music folders
+- **🔍 Search** - Filter by title, artist, or filename
+- **🔀 Shuffle & Repeat** - Standard playback modes
+- **⏩ Speed Control** - 0.5x to 2x playback speed
+- **📋 Queue Management** - View and manage playlist
+- **💿 Format Support** - MP3, WAV, OGG, FLAC, M4A, AAC, WMA
 
-### Download
-Download the latest installer from the [Releases](../../releases) page.
+### 🌐 Integrations
 
-### Build from Source
+- **🎵 Spotify** - Browse playlists, get track metadata (BPM, key)
+- **💬 Discord** - Rich Presence showing current track
+- **🎨 Album Art** - Display album artwork from files
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/spectra.git
-   cd spectra
-   ```
+---
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+## 📸 Screenshots
 
-3. **Run the app**
-   ```bash
-   npm start
-   ```
+> *Add your screenshots here*
 
-4. **Build installer**
-   ```bash
-   npm run build:win    # Windows
-   npm run build:mac    # macOS
-   npm run build:linux  # Linux
-   ```
+<details>
+<summary>Click to view more screenshots</summary>
 
-## Spotify Setup
+### Waveform Visualizer
+![Waveform](screenshots/waveform.png)
 
-To connect your Spotify account and access your playlists:
+### Kaleidoscope Visualizer
+![Kaleidoscope](screenshots/kaleidoscope.png)
 
-1. Go to https://developer.spotify.com/dashboard
-2. Create a new application
-3. Set Redirect URI to `http://localhost:8888/callback`
-4. Copy the Client ID and Client Secret
-5. Open `main.js` and replace the Spotify credentials
-6. Click "Connect Spotify" in the app
+### Starfield with Vocal Halo
+![Starfield](screenshots/starfield.png)
 
-See [SPOTIFY_SETUP.md](SPOTIFY_SETUP.md) for detailed step-by-step instructions.
+### Settings Panel
+![Settings](screenshots/settings.png)
 
-## Discord Rich Presence Setup
+</details>
 
-1. Go to https://discord.com/developers/applications
-2. Create a new application named "Spectra"
-3. Copy the Application ID
-4. Open `main.js` and replace the `clientId` on line 6
-5. (Optional) Upload your icon in Rich Presence → Art Assets as `icon`
+---
 
-See [DISCORD_SETUP.md](DISCORD_SETUP.md) for detailed instructions.
+## 🚀 Getting Started
 
-## Keyboard Shortcuts
+### Quick Start
 
-- **Space** - Play/Pause
-- **Arrow Left** - Previous track
-- **Arrow Right** - Next track
-- **Arrow Up** - Volume up
-- **Arrow Down** - Volume down
+1. **Download** the installer for your platform
+2. **Install** and launch Spectra
+3. **Browse** to your music folder
+4. **Select** a visualizer
+5. **Enjoy** the show! 🎉
 
-## Technologies
+### First Time Setup
 
-- **Electron** - Desktop app framework
-- **Web Audio API** - Audio processing and analysis
-- **Canvas API** - Real-time visualization rendering
-- **Spotify Web API** - Spotify integration and playlist access
-- **discord-rpc** - Discord Rich Presence integration
-- **web-audio-beat-detector** - BPM detection
+1. **Load Music**
+   - Click "Browse Folder" button
+   - Select your music folder
+   - Enable "Include Subfolders" if needed
 
-## Project Structure
+2. **Choose Visualizer**
+   - Select from dropdown in right panel
+   - Adjust settings to your preference
 
+3. **Customize**
+   - Open Settings (⚙️ icon)
+   - Change colors, effects, and more
+   - Save as preset for later!
+
+---
+
+## 🎮 Controls
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Space` | Play / Pause |
+| `←` | Previous Track |
+| `→` | Next Track |
+| `↑` | Volume Up |
+| `↓` | Volume Down |
+| `Ctrl+O` | Open Folder |
+| `Ctrl+,` | Settings |
+| `Ctrl+S` | Shuffle |
+| `Ctrl+R` | Repeat |
+
+### Mouse Controls
+
+- **Click** song to play
+- **Drag** progress bar to seek
+- **Scroll** in file list to browse
+- **Click** folder headers to collapse/expand
+
+---
+
+## 💾 Preset System
+
+### Using Presets
+
+**Save Your Settings:**
+1. Configure your perfect visualizer setup
+2. Click "Save" in visualizer panel
+3. Choose location and name
+4. File saved as `.spk` format
+
+**Load a Preset:**
+1. Click "Load" in visualizer panel
+2. Select a `.spk` file
+3. Settings applied instantly!
+
+### Demo Presets
+
+8 presets included in `presets/` folder:
+- 🎤 **Vocal Focus** - Tuned for vocal tracks
+- 🔊 **Bass Heavy** - For EDM and bass music
+- 🌊 **Chill Vibes** - Relaxing lo-fi aesthetic
+- 🌀 **Psychedelic** - Trippy kaleidoscope
+- 🌆 **Retro Wave** - Synthwave vibes
+- ⚪ **Minimal** - Clean and simple
+- ✨ **Hi-Hat Focus** - For percussion
+- 🎧 **DJ Mode** - Aggressive visuals
+
+---
+
+## 🎵 Key Detection (Camelot Notation)
+
+Spectra detects the musical key of your tracks and displays it in **Camelot notation** - perfect for harmonic mixing!
+
+### What is Camelot?
+
+The Camelot Wheel is a DJ tool for harmonic mixing:
+- **Same number** = Perfect mix (8B → 8A)
+- **±1 number** = Smooth transition (8B → 7B or 9B)
+- **Energy boost** = +1 same letter (8B → 9B)
+
+### Toggle Notation
+
+Switch between Camelot (8B, 5A) and standard (C major, A minor) in Settings → Display
+
+---
+
+## 🔧 Advanced Features
+
+### Starfield Customization
+
+The Starfield visualizer has a **vocal-reactive center halo**:
+- **Halo Freq Start %** - Starting frequency (0-100%)
+- **Halo Freq End %** - Ending frequency (0-100%)
+- **Halo Intensity** - Brightness multiplier (0-2x)
+
+**Presets:**
+- Vocals: 40-80%
+- Hi-hats: 70-100%
+- Bass: 0-30%
+
+### GPU Acceleration
+
+Enable in Settings → Performance for:
+- Smoother animations
+- Higher frame rates
+- Better particle effects
+
+### Developer Mode
+
+Enable "Open DevTools on Startup" in Settings → Developer for debugging and development.
+
+---
+
+## 🛠️ Building from Source
+
+### Prerequisites
+
+- Node.js 16+ and npm
+- Git
+
+### Clone & Install
+
+```bash
+git clone https://github.com/nemesis-deb/spectra.git
+cd spectra
+npm install
 ```
-spectra/
-├── main.js              # Electron main process
-├── renderer.js          # Renderer process & visualizers
-├── index.html           # UI layout
-├── package.json         # Dependencies & build config
-├── icon.png             # App icon (no background)
-├── icon-bg.png          # App icon (with background)
-└── README.md           # This file
+
+### Run Development
+
+```bash
+npm start
 ```
 
-## Contributing
+### Build Installers
 
-Contributions are welcome! Feel free to:
-- Report bugs
-- Suggest new features
-- Submit pull requests
-- Add new visualizers
+```bash
+# Windows
+npm run build:win
 
-## License
+# macOS (requires macOS)
+npm run build:mac
 
-MIT License - feel free to use this project however you'd like!
+# Linux (requires Linux)
+npm run build:linux
+```
 
-## Credits
+Outputs will be in `dist/` folder.
 
-Built with ❤️ using Electron and Web Audio API
+---
 
-BPM detection powered by [web-audio-beat-detector](https://github.com/chrisguttandin/web-audio-beat-detector)
+## 🔌 Integrations Setup
+
+### Spotify Integration
+
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Create new app
+3. Set Redirect URI: `http://127.0.0.1:8888/callback`
+4. Copy Client ID and Secret
+5. Edit `main.js` lines 20-22 with your credentials
+6. Restart app and click "Connect Spotify"
+
+See [SPOTIFY_SETUP.md](SPOTIFY_SETUP.md) for details.
+
+### Discord Rich Presence
+
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Create new application named "Spectra"
+3. Copy Application ID
+4. Edit `main.js` line 19 with your ID
+5. (Optional) Upload icon in Rich Presence → Art Assets
+6. Restart app
+
+See [DISCORD_SETUP.md](DISCORD_SETUP.md) for details.
+
+---
+
+## 📚 Documentation
+
+- [Release Notes](RELEASE_NOTES_v1.0.2.md) - What's new in v1.0.2
+- [Preset Format](PRESET_FORMAT.md) - .spk file specification
+- [Phase 12 Summary](PHASE_12_SUMMARY.md) - Key detection details
+- [Build Guide](BUILD_GUIDE.md) - Detailed build instructions
+- [Project Structure](PROJECT_STRUCTURE.md) - Code organization
+- [Advanced Features](ADVANCED_FEATURES_TODO.md) - Roadmap
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how you can help:
+
+- 🐛 **Report Bugs** - Open an issue with details
+- 💡 **Suggest Features** - Share your ideas
+- 🎨 **Create Visualizers** - Add new visualization modes
+- 💾 **Share Presets** - Submit your favorite configs
+- 📖 **Improve Docs** - Help others understand
+- 🌍 **Translations** - Localize the app
+
+### Development
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing`)
+5. Open Pull Request
+
+---
+
+## 📊 Project Stats
+
+- **13 Visualizers** (8 2D + 5 3D WebGL)
+- **14 Modules** - Clean, modular architecture
+- **7 Audio Formats** - MP3, WAV, OGG, FLAC, M4A, AAC, WMA
+- **8 Demo Presets** - Ready to use
+- **60 FPS** - Smooth GPU-accelerated visuals
+
+---
+
+## 🐛 Known Issues
+
+- Spotify integration is metadata-only (no direct playback due to DRM)
+- Key detection works best with clear harmonic content
+- macOS/Linux builds require their respective platforms
+- Some GPU drivers may show console warnings (harmless)
+
+---
+
+## 📝 License
+
+MIT License - See [LICENSE](LICENSE) file for details.
+
+Feel free to use, modify, and distribute this project!
+
+---
+
+## 🙏 Credits
+
+### Built With
+
+- [Electron](https://www.electronjs.org/) - Desktop framework
+- [Three.js](https://threejs.org/) - 3D WebGL visualizers
+- [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API) - Audio processing
+- [web-audio-beat-detector](https://github.com/chrisguttandin/web-audio-beat-detector) - BPM detection
+- [Spotify Web API](https://developer.spotify.com/documentation/web-api/) - Music metadata
+- [Discord RPC](https://discord.com/developers/docs/topics/rpc) - Rich Presence
+
+### Special Thanks
+
+- Krumhansl-Schmuckler algorithm for key detection
+- Camelot Wheel system for harmonic mixing
+- Open source community for amazing tools
+
+---
+
+## 💬 Support
+
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/nemesis-deb/spectra/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/nemesis-deb/spectra/discussions)
+- 📧 **Contact**: Open an issue for questions
+
+---
+
+## ⭐ Star History
+
+If you like Spectra, give it a star! ⭐
+
+[![Star History Chart](https://api.star-history.com/svg?repos=nemesis-deb/spectra&type=Date)](https://star-history.com/#nemesis-deb/spectra&Date)
+
+---
+
+<div align="center">
+
+**Made with ❤️ and lots of ☕**
+
+[⬆ Back to Top](#-spectra)
+
+</div>
