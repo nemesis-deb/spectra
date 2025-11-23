@@ -6,18 +6,17 @@ This directory contains the organized source code for the Audio Visualizer appli
 
 ```
 src/
-├── css/
-│   └── styles.css          # All application styles
-├── js/
-│   ├── renderer.js         # Main application logic
-│   └── utils/
-│       ├── time-formatter.js    # Time formatting utilities
-│       └── file-parser.js       # Filename parsing utilities
+├── styles.css              # All application styles
+└── js/
+    ├── renderer.js         # Main application logic
+    └── utils/
+        ├── time-formatter.js    # Time formatting utilities
+        └── file-parser.js       # Filename parsing utilities
 ```
 
 ## Module Descriptions
 
-### css/styles.css
+### styles.css
 All application styling including:
 - Layout and components
 - Dark theme colors
