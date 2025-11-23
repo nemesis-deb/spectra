@@ -1,7 +1,27 @@
 console.log('Renderer process loaded!');
 
+// Global error handlers
+window.addEventListener('error', (event) => {
+    console.error('Global error caught:', event.error);
+    console.error('Error message:', event.message);
+    console.error('Error stack:', event.error?.stack);
+    event.preventDefault();
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+    console.error('Unhandled promise rejection:', event.reason);
+    event.preventDefault();
+});
+
 // Import BPM detection library
-const { guess } = require('web-audio-beat-detector');
+let guess = null;
+try {
+    const beatDetector = require('web-audio-beat-detector');
+    guess = beatDetector.guess;
+    console.log('BPM detection library loaded successfully');
+} catch (error) {
+    console.warn('BPM detection library not available:', error.message);
+}
 
 // Audio variables (declare first)
 let audioBuffer = null;
@@ -98,6 +118,7 @@ const settings = {
 
 // Beat detection variables
 let beatValue = 0;
+const beatDecay = 0.95; // Decay rate for beat flash effect
 
 // BPM detection variables
 let detectedBPM = 0;
@@ -147,6 +168,14 @@ function detectBeat() {
 
 // Analyze BPM using web-audio-beat-detector library
 async function analyzeBPM(audioBuffer) {
+    if (!guess) {
+        console.log('BPM detection not available');
+        detectedBPM = 0;
+        bpmOffset = 0;
+        updateBPMDisplay();
+        return;
+    }
+    
     try {
         console.log('Analyzing BPM...');
         const result = await guess(audioBuffer);
@@ -540,12 +569,23 @@ function loadFolder(folderPath) {
 
 // Update folder path display
 function updateFolderPath(folderPathStr) {
-    const pathParts = folderPathStr.split(path.sep);
+    if (!folderPathStr) return;
+    
+    const pathParts = folderPathStr.split(path.sep).filter(part => part);
+    if (pathParts.length === 0) return;
+    
     folderPath.innerHTML = '';
 
     const homeSpan = document.createElement('span');
     homeSpan.className = 'path-segment';
-    homeSpan.textContent = '🏠 ' + pathParts[pathParts.length - 1];
+    
+    const svgIcon = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align: middle; margin-right: 4px;"><path d="M1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25v-8.5A1.75 1.75 0 0014.25 3H7.5a.25.25 0 01-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75z"/></svg>';
+    const folderName = pathParts[pathParts.length - 1];
+    
+    homeSpan.innerHTML = svgIcon;
+    const textNode = document.createTextNode(folderName);
+    homeSpan.appendChild(textNode);
+    
     folderPath.appendChild(homeSpan);
 }
 
@@ -655,6 +695,9 @@ function renderFileList() {
                 if (wasPlaying) {
                     setTimeout(() => playBtn.click(), 100);
                 }
+            }).catch(error => {
+                console.error('Error in file click handler:', error);
+                statusText.textContent = 'Error loading file: ' + error.message;
             });
         });
 
@@ -671,27 +714,52 @@ searchInput.addEventListener('input', (e) => {
 
 // Load audio file
 async function loadAudioFile(index) {
-    if (index < 0 || index >= audioFiles.length) return;
+    console.log('loadAudioFile called with index:', index);
+    
+    if (index < 0 || index >= audioFiles.length) {
+        console.log('Invalid index, returning');
+        return;
+    }
 
     // Stop current playback if any
     if (audioSource && isPlaying) {
         manualStop = true; // Set flag before stopping
-        audioSource.stop();
+        try {
+            audioSource.stop();
+        } catch (e) {
+            console.warn('Error stopping audio source:', e);
+        }
         isPlaying = false;
     }
 
     currentFileIndex = index;
     const file = audioFiles[index];
+    
+    if (!file || !file.path) {
+        console.error('Invalid file object:', file);
+        statusText.textContent = 'Error: Invalid file';
+        return;
+    }
 
     statusText.textContent = 'Loading...';
-    console.log('Loading file:', file.name);
+    console.log('Loading file:', file.name, 'from path:', file.path);
 
     try {
+        // Check if file exists
+        if (!fs.existsSync(file.path)) {
+            throw new Error('File does not exist: ' + file.path);
+        }
+        
+        console.log('Reading file...');
         // Read file
         const buffer = fs.readFileSync(file.path);
+        console.log('File read successfully, size:', buffer.length, 'bytes');
+        
         const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+        console.log('ArrayBuffer created, byteLength:', arrayBuffer.byteLength);
 
         // Decode audio data
+        console.log('Decoding audio data...');
         audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
         console.log('Audio loaded successfully:', audioBuffer.duration, 'seconds');
 
@@ -1739,13 +1807,15 @@ function loadSettings() {
 
 loadSettings();
 
-// Load last opened folder on startup
-const lastFolder = localStorage.getItem('lastOpenedFolder');
-if (lastFolder && fs.existsSync(lastFolder)) {
-    console.log('Loading last opened folder:', lastFolder);
-    currentFolder = lastFolder;
-    loadFolder(lastFolder);
-}
+// Load last opened folder on startup (deferred to improve startup time)
+setTimeout(() => {
+    const lastFolder = localStorage.getItem('lastOpenedFolder');
+    if (lastFolder && fs.existsSync(lastFolder)) {
+        console.log('Loading last opened folder:', lastFolder);
+        currentFolder = lastFolder;
+        loadFolder(lastFolder);
+    }
+}, 100);
 
 // Initialize Discord presence
 setTimeout(() => {

@@ -2,6 +2,15 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const DiscordRPC = require('discord-rpc');
 const SpotifyWebApi = require('spotify-web-api-node');
 
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception in main process:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled rejection in main process:', reason);
+});
+
 let mainWindow;
 let rpcClient = null;
 const clientId = '1441891580561850379'; // You'll need to create a Discord app and replace this
@@ -33,26 +42,28 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
-  mainWindow.webContents.openDevTools(); // Opens DevTools automatically - helpful for learning!
+  // mainWindow.webContents.openDevTools(); // Uncomment for debugging
 
-  // Check if Widevine is available (needed for Spotify Premium playback)
+  // Check if Widevine is available (needed for Spotify Premium playback) - deferred for faster startup
   mainWindow.webContents.on('did-finish-load', () => {
-    console.log('Checking Widevine DRM support...');
-    mainWindow.webContents.executeJavaScript(`
-      navigator.requestMediaKeySystemAccess('com.widevine.alpha', [{
-        initDataTypes: ['cenc'],
-        videoCapabilities: [{contentType: 'video/mp4; codecs="avc1.42E01E"'}],
-        audioCapabilities: [{contentType: 'audio/mp4; codecs="mp4a.40.2"'}]
-      }]).then(() => {
-        console.log('Widevine DRM is available');
-        return true;
-      }).catch((err) => {
-        console.warn('Widevine DRM not available:', err);
-        return false;
+    setTimeout(() => {
+      console.log('Checking Widevine DRM support...');
+      mainWindow.webContents.executeJavaScript(`
+        navigator.requestMediaKeySystemAccess('com.widevine.alpha', [{
+          initDataTypes: ['cenc'],
+          videoCapabilities: [{contentType: 'video/mp4; codecs="avc1.42E01E"'}],
+          audioCapabilities: [{contentType: 'audio/mp4; codecs="mp4a.40.2"'}]
+        }]).then(() => {
+          console.log('Widevine DRM is available');
+          return true;
+        }).catch((err) => {
+          console.warn('Widevine DRM not available:', err);
+          return false;
+        });
+      `).then(result => {
+        console.log('Widevine check result:', result);
       });
-    `).then(result => {
-      console.log('Widevine check result:', result);
-    });
+    }, 2000);
   });
 }
 

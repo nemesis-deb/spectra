@@ -1,12 +1,12 @@
 # Audio Visualizer App - Learning Roadmap
 
 ## Phase 1: Project Setup & Foundation
-- [ ] Initialize npm project (`npm init`)
-- [ ] Install Electron (`npm install electron --save-dev`)
-- [ ] Install audio processing library (`npm install web-audio-api`)
-- [ ] Create basic project structure (main.js, renderer.js, index.html)
-- [ ] Set up Electron window that opens and displays "Hello World"
-- [ ] Configure package.json with start script
+- [x] Initialize npm project (`npm init`)
+- [x] Install Electron (`npm install electron --save-dev`)
+- [x] Install audio processing library (`npm install web-audio-api`)
+- [x] Create basic project structure (main.js, renderer.js, index.html)
+- [x] Set up Electron window that opens and displays "Hello World"
+- [x] Configure package.json with start script
 
 ## Phase 2: Audio Input - File Playback
 - [x] Create HTML audio element or use Web Audio API AudioContext

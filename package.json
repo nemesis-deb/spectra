@@ -49,7 +49,7 @@
         "AppImage",
         "deb"
       ],
-      "icon": "build/icon.png",
+      "icon": "build/icon_nobg.png",
       "category": "Audio"
     },
     "nsis": {
