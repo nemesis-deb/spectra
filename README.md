@@ -44,6 +44,13 @@ A beautiful real-time audio visualizer built with Electron, featuring multiple v
 - **Auto-load** - Remembers last opened folder
 - **Format Support** - MP3, WAV, OGG, FLAC, M4A, AAC, WMA
 
+### 🎵 Spotify Integration
+- **Connect your Spotify Account** - OAuth 2.0 secure authentication
+- **Access your Playlists** - Browse all your public and private playlists
+- **Automatic BPM Detection** - Uses Spotify's audio analysis
+- **Album Artwork** - Beautiful playlist and track covers
+- **30-second Previews** - Listen to track previews with full visualization
+
 ## Installation
 
 ### Download
@@ -74,6 +81,19 @@ Download the latest installer from the [Releases](../../releases) page.
    npm run build:linux  # Linux
    ```
 
+## Spotify Setup
+
+To connect your Spotify account and access your playlists:
+
+1. Go to https://developer.spotify.com/dashboard
+2. Create a new application
+3. Set Redirect URI to `http://localhost:8888/callback`
+4. Copy the Client ID and Client Secret
+5. Open `main.js` and replace the Spotify credentials
+6. Click "Connect Spotify" in the app
+
+See [SPOTIFY_SETUP.md](SPOTIFY_SETUP.md) for detailed step-by-step instructions.
+
 ## Discord Rich Presence Setup
 
 1. Go to https://discord.com/developers/applications
@@ -97,6 +117,7 @@ See [DISCORD_SETUP.md](DISCORD_SETUP.md) for detailed instructions.
 - **Electron** - Desktop app framework
 - **Web Audio API** - Audio processing and analysis
 - **Canvas API** - Real-time visualization rendering
+- **Spotify Web API** - Spotify integration and playlist access
 - **discord-rpc** - Discord Rich Presence integration
 - **web-audio-beat-detector** - BPM detection
 

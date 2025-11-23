@@ -463,14 +463,100 @@
     .path-segment:hover {
       text-decoration: underline;
     }
+    .tab-btn {
+      transition: all 0.2s;
+    }
+    .tab-btn:hover:not(.active) {
+      background: #555 !important;
+      color: #fff !important;
+    }
+    .tab-btn.active {
+      background: #00ff88 !important;
+      color: #000 !important;
+    }
+    .playlist-item {
+      padding: 10px;
+      margin: 2px 0;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.2s;
+      background: #1a1a1a;
+    }
+    .playlist-item:hover {
+      background: #3a3a3a;
+    }
+    .playlist-item.selected {
+      background: #00ff88;
+      color: #000;
+    }
+    .playlist-cover {
+      width: 40px;
+      height: 40px;
+      border-radius: 3px;
+      background: #444;
+      flex-shrink: 0;
+    }
+    .playlist-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .playlist-name {
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .playlist-tracks {
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+    }
+    .playlist-item.selected .playlist-tracks {
+      color: #000;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
   <!-- Sidebar with File Navigator -->
   <div class="sidebar">
     <div class="sidebar-header">
-      <h2>File Browser</h2>
+      <h2>Music Library</h2>
       <div id="fileCount" style="font-size: 12px; color: #888; margin-top: 5px;">No folder selected</div>
+    </div>
+    <div style="padding: 10px; border-bottom: 1px solid #444; background: #1f1f1f;">
+      <div style="display: flex; gap: 5px;">
+        <button id="localFilesTab" class="tab-btn active" style="flex: 1; padding: 8px; background: #00ff88; border: none; border-radius: 3px; cursor: pointer; font-size: 13px; font-weight: 600; color: #000;">Local Files</button>
+        <button id="spotifyTab" class="tab-btn" style="flex: 1; padding: 8px; background: #444; border: none; border-radius: 3px; cursor: pointer; font-size: 13px; font-weight: 600; color: #888;">Spotify</button>
+      </div>
+    </div>
+    <div id="spotifyPanel" class="hidden" style="padding: 15px; border-bottom: 1px solid #444;">
+      <div id="spotifyLogin" style="text-align: center;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" style="margin: 10px auto; display: block;">
+          <circle cx="12" cy="12" r="10" stroke="#1DB954" stroke-width="2"/>
+          <path d="M8 11c2.5-1.5 5.5-1.5 8 0M8.5 14c2-1 4-1 6 0M9 17c1.5-0.5 3-0.5 4.5 0" stroke="#1DB954" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p style="color: #888; font-size: 13px; margin: 10px 0;">Connect your Spotify account to access your playlists</p>
+        <button id="spotifyLoginBtn" style="width: 100%; background: #1DB954; color: white; padding: 10px; border: none; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 14px;">Connect Spotify</button>
+      </div>
+      <div id="spotifyConnected" class="hidden">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 8px; background: rgba(29, 185, 84, 0.1); border-radius: 3px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="#1DB954" stroke-width="2"/>
+            <path d="M8 12l2 2 4-4" stroke="#1DB954" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <div style="flex: 1;">
+            <div id="spotifyUsername" style="color: #1DB954; font-size: 13px; font-weight: 600;"></div>
+            <div style="color: #888; font-size: 11px;">Connected</div>
+          </div>
+          <button id="spotifyLogoutBtn" style="padding: 5px 10px; background: transparent; border: 1px solid #444; color: #888; border-radius: 3px; cursor: pointer; font-size: 11px;">Disconnect</button>
+        </div>
+        <button id="loadPlaylistsBtn" style="width: 100%; background: #00ff88; color: #000; padding: 8px; border: none; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 13px; margin-bottom: 10px;">Load Playlists</button>
+      </div>
     </div>
     <div class="folder-path" id="folderPath">
       <span class="path-segment" data-path="">Home</span>
@@ -682,7 +768,8 @@
       <canvas id="visualizer" width="1200" height="600"></canvas>
     </div>
   </div>
-  
+
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

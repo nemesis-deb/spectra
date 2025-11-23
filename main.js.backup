@@ -9,9 +9,9 @@ const clientId = '1441891580561850379'; // You'll need to create a Discord app a
 // Spotify API Configuration
 // TODO: Replace with your own Spotify App credentials from https://developer.spotify.com/dashboard
 const spotifyApi = new SpotifyWebApi({
-  clientId: '9c5bfbb409c542118a2fe6a77011aa42',
-  clientSecret: '336180083a254f169dc971d609f22a23',
-  redirectUri: 'http://127.0.0.1:8888/callback'
+  clientId: 'YOUR_SPOTIFY_CLIENT_ID',
+  clientSecret: 'YOUR_SPOTIFY_CLIENT_SECRET',
+  redirectUri: 'http://localhost:8888/callback'
 });
 
 let spotifyAuthServer = null;
@@ -27,33 +27,12 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true,
-      plugins: true // Enable plugins for Widevine DRM
+      enableRemoteModule: true
     }
   });
 
   mainWindow.loadFile('index.html');
   mainWindow.webContents.openDevTools(); // Opens DevTools automatically - helpful for learning!
-
-  // Check if Widevine is available (needed for Spotify Premium playback)
-  mainWindow.webContents.on('did-finish-load', () => {
-    console.log('Checking Widevine DRM support...');
-    mainWindow.webContents.executeJavaScript(`
-      navigator.requestMediaKeySystemAccess('com.widevine.alpha', [{
-        initDataTypes: ['cenc'],
-        videoCapabilities: [{contentType: 'video/mp4; codecs="avc1.42E01E"'}],
-        audioCapabilities: [{contentType: 'audio/mp4; codecs="mp4a.40.2"'}]
-      }]).then(() => {
-        console.log('Widevine DRM is available');
-        return true;
-      }).catch((err) => {
-        console.warn('Widevine DRM not available:', err);
-        return false;
-      });
-    `).then(result => {
-      console.log('Widevine check result:', result);
-    });
-  });
 }
 
 // Setup IPC handlers
@@ -85,8 +64,8 @@ function setupIPCHandlers() {
     startSpotifyAuth(event);
   });
 
-  ipcMain.on('spotify-get-playlists', (event, accessToken) => {
-    getSpotifyPlaylists(event, accessToken);
+  ipcMain.on('spotify-get-playlists', (event) => {
+    getSpotifyPlaylists(event);
   });
 
   ipcMain.on('spotify-get-playlist-tracks', (event, playlistId) => {
@@ -173,9 +152,7 @@ function startSpotifyAuth(event) {
     'user-library-read',
     'streaming',
     'user-read-playback-state',
-    'user-modify-playback-state',
-    'user-read-currently-playing',
-    'app-remote-control'
+    'user-modify-playback-state'
   ];
 
   const authorizeURL = spotifyApi.createAuthorizeURL(scopes, 'state');
@@ -265,12 +242,7 @@ async function refreshSpotifyToken(event) {
 }
 
 // Helper functions for Spotify IPC handlers
-function getSpotifyPlaylists(event, accessToken) {
-  // If token provided, use it directly
-  if (accessToken) {
-    spotifyApi.setAccessToken(accessToken);
-  }
-
+function getSpotifyPlaylists(event) {
   spotifyApi.getUserPlaylists({ limit: 50 })
     .then(playlists => {
       event.sender.send('spotify-playlists-received', playlists.body);
