@@ -12,6 +12,11 @@ import { DnaHelixVisualizer } from './visualizers/dna-helix.js';
 import { StarfieldVisualizer } from './visualizers/starfield.js';
 import { TunnelVisualizer } from './visualizers/tunnel.js';
 import { FireworksVisualizer } from './visualizers/fireworks.js';
+import { PlasmaVisualizer } from './visualizers/plasma.js';
+import { MatrixVisualizer } from './visualizers/matrix.js';
+import { NebulaVisualizer } from './visualizers/nebula.js';
+import { EqualizerVisualizer } from './visualizers/equalizer.js';
+import { VortexVisualizer } from './visualizers/vortex.js';
 import { FileManager } from './modules/file-manager.js';
 import { DiscordRPC } from './modules/discord-rpc.js';
 import { BPMDetector } from './modules/bpm-detector.js';
@@ -1691,6 +1696,11 @@ visualizerManager.register(new DnaHelixVisualizer());
 visualizerManager.register(new StarfieldVisualizer());
 visualizerManager.register(new TunnelVisualizer());
 visualizerManager.register(new FireworksVisualizer());
+visualizerManager.register(new PlasmaVisualizer());
+visualizerManager.register(new MatrixVisualizer());
+visualizerManager.register(new NebulaVisualizer());
+visualizerManager.register(new EqualizerVisualizer());
+visualizerManager.register(new VortexVisualizer());
 
 // Initialize all visualizers with canvas context
 visualizerManager.visualizers.forEach(viz => viz.init(canvas, ctx));
@@ -2321,6 +2331,7 @@ ctx.fillText('Browse a folder and select an audio file to begin', canvas.width /
 // ===== SPOTIFY INTEGRATION =====
 
 let spotifyAccessToken = null;
+let spotifyRefreshToken = null;
 let spotifyPlaylists = [];
 let currentSpotifyPlaylist = null;
 let currentSpotifyTrack = null;
@@ -2420,7 +2431,7 @@ spotifyLogoutBtn.addEventListener('click', () => {
 // Load playlists
 loadPlaylistsBtn.addEventListener('click', () => {
     console.log('Loading Spotify playlists...');
-    ipcRenderer.send('spotify-get-playlists', spotifyAccessToken);
+    ipcRenderer.send('spotify-get-playlists', spotifyAccessToken, spotifyRefreshToken);
     statusText.textContent = 'Loading playlists...';
 });
 
@@ -2428,6 +2439,7 @@ loadPlaylistsBtn.addEventListener('click', () => {
 ipcRenderer.on('spotify-auth-success', (event, data) => {
     console.log('Spotify authentication successful!', data.user);
     spotifyAccessToken = data.accessToken;
+    spotifyRefreshToken = data.refreshToken;
 
     // Save tokens
     localStorage.setItem('spotifyAccessToken', data.accessToken);
@@ -2588,7 +2600,7 @@ function renderSpotifyTracks(tracks) {
         const downloadBtn = document.createElement('button');
         downloadBtn.className = 'spotify-download-btn';
         downloadBtn.innerHTML = '⬇';
-        downloadBtn.title = 'Download MP3 (opens browser)';
+        downloadBtn.title = 'Download MP3 from YouTube';
         downloadBtn.style.cssText = 'padding: 5px 10px; background: #1DB954; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 16px; margin-left: auto;';
         downloadBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // Don't trigger track play
@@ -2686,11 +2698,13 @@ async function loadSpotifyTrackPreview(track, index) {
 
 // Check for saved Spotify session on startup
 const savedAccessToken = localStorage.getItem('spotifyAccessToken');
+const savedRefreshToken = localStorage.getItem('spotifyRefreshToken');
 const savedUser = localStorage.getItem('spotifyUser');
 
 if (savedAccessToken && savedUser) {
     try {
         spotifyAccessToken = savedAccessToken;
+        spotifyRefreshToken = savedRefreshToken;
         const user = JSON.parse(savedUser);
 
         spotifyLogin.classList.add('hidden');
@@ -3004,8 +3018,43 @@ async function loadSpotifyTrack(track, index) {
     }
 }
 
-// Download Spotify track as MP3 using online service
+// Download Spotify track as MP3 using YouTube
 function downloadSpotifyTrack(track) {
+    console.log('Downloading track:', track.name);
+
+    // Show downloading status
+    statusText.textContent = `Searching YouTube for "${track.name}"...`;
+
+    // Send download request to main process
+    ipcRenderer.send('download-spotify-track', {
+        title: track.name,
+        artist: track.artists.map(a => a.name).join(', '),
+        album: track.album ? track.album.name : '',
+        albumArt: track.album && track.album.images && track.album.images.length > 0 
+            ? track.album.images[0].url 
+            : null
+    });
+}
+
+// Listen for download progress
+ipcRenderer.on('download-progress', (event, data) => {
+    statusText.textContent = data.message;
+});
+
+// Listen for download complete
+ipcRenderer.on('download-complete', (event, data) => {
+    statusText.textContent = `Downloaded: ${data.filename}`;
+    console.log('Download complete:', data.path);
+});
+
+// Listen for download error
+ipcRenderer.on('download-error', (event, error) => {
+    statusText.textContent = `Download failed: ${error}`;
+    console.error('Download error:', error);
+});
+
+// OLD CODE - keeping for reference
+function downloadSpotifyTrackOld(track) {
     console.log('Opening download service for:', track.name);
 
     // Construct search query: "Artist - Track Name"

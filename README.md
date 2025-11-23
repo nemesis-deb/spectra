@@ -21,7 +21,7 @@
 
 ## ✨ Highlights
 
-- 🎨 **13 Unique Visualizers** - From classic waveforms to 3D WebGL effects
+- 🎨 **18 Unique Visualizers** - From classic waveforms to 3D WebGL effects
 - 🎵 **Key Detection** - Camelot notation for harmonic mixing (perfect for DJs!)
 - 🎯 **BPM Detection** - Automatic tempo analysis with beat-reactive effects
 - 💾 **Preset System** - Save and share your favorite visualizer configs (.spk files)
@@ -50,7 +50,7 @@ Build from source (see [Building](#-building-from-source))
 
 ## 🎨 Features
 
-### 🌈 13 Stunning Visualizers
+### 🌈 18 Stunning Visualizers
 
 <table>
 <tr>
@@ -65,6 +65,9 @@ Build from source (see [Building](#-building-from-source))
 - 🎯 **Radial Bars** - Circular spectrum
 - 💫 **Wave Rings** - Concentric patterns
 - 📈 **Oscilloscope** - XY mode
+- 🌊 **Plasma** - Flowing plasma effect
+- 💻 **Matrix** - Matrix-style falling code
+- 🎚️ **Equalizer** - Classic bars with glow
 
 </td>
 <td width="50%">
@@ -75,6 +78,8 @@ Build from source (see [Building](#-building-from-source))
 - ⭐ **Starfield** - Space flight effect
 - 🌀 **Tunnel** - Infinite tunnel
 - 🎆 **Fireworks** - Beat-reactive explosions
+- 🌌 **Nebula** - Space nebula particles
+- 🌪️ **Vortex** - Spinning vortex effect
 
 </td>
 </tr>
@@ -382,7 +387,7 @@ Contributions are welcome! Here's how you can help:
 
 ## 📊 Project Stats
 
-- **13 Visualizers** (8 2D + 5 3D WebGL)
+- **18 Visualizers** (11 2D + 7 3D/WebGL)
 - **14 Modules** - Clean, modular architecture
 - **7 Audio Formats** - MP3, WAV, OGG, FLAC, M4A, AAC, WMA
 - **8 Demo Presets** - Ready to use

@@ -1,7 +1,25 @@
+// Polyfill for undici compatibility with Electron
+if (typeof global.File === 'undefined') {
+  global.File = class File extends Blob {
+    constructor(bits, name, options) {
+      super(bits, options);
+      this.name = name;
+      this.lastModified = options?.lastModified || Date.now();
+    }
+  };
+}
+
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const DiscordRPC = require('discord-rpc');
 const SpotifyWebApi = require('spotify-web-api-node');
 const jsmediatags = require('jsmediatags');
+const youtubedl = require('youtube-dl-exec');
+const yts = require('yt-search');
+const fs = require('fs');
+const path = require('path');
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+const ffmpeg = require('fluent-ffmpeg');
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 // Global error handlers
 process.on('uncaughtException', (error) => {
@@ -244,8 +262,8 @@ function setupIPCHandlers() {
     startSpotifyAuth(event);
   });
 
-  ipcMain.on('spotify-get-playlists', (event, accessToken) => {
-    getSpotifyPlaylists(event, accessToken);
+  ipcMain.on('spotify-get-playlists', (event, accessToken, refreshToken) => {
+    getSpotifyPlaylists(event, accessToken, refreshToken);
   });
 
   ipcMain.on('spotify-get-playlist-tracks', (event, playlistId) => {
@@ -254,6 +272,10 @@ function setupIPCHandlers() {
 
   ipcMain.on('spotify-get-track-features', (event, trackId) => {
     getSpotifyTrackFeatures(event, trackId);
+  });
+
+  ipcMain.on('download-spotify-track', (event, trackInfo) => {
+    downloadTrackFromYouTube(event, trackInfo);
   });
 
   // Album art extraction
@@ -598,40 +620,274 @@ async function refreshSpotifyToken(event) {
 }
 
 // Helper functions for Spotify IPC handlers
-function getSpotifyPlaylists(event, accessToken) {
-  // If token provided, use it directly
+async function getSpotifyPlaylists(event, accessToken, refreshToken) {
+  // Set tokens
   if (accessToken) {
     spotifyApi.setAccessToken(accessToken);
   }
+  if (refreshToken) {
+    spotifyApi.setRefreshToken(refreshToken);
+  }
 
-  spotifyApi.getUserPlaylists({ limit: 50 })
-    .then(playlists => {
-      event.sender.send('spotify-playlists-received', playlists.body);
-    })
-    .catch(err => {
-      console.error('Error getting playlists:', err);
+  try {
+    const playlists = await spotifyApi.getUserPlaylists({ limit: 50 });
+    event.sender.send('spotify-playlists-received', playlists.body);
+  } catch (err) {
+    console.error('Error getting playlists:', err);
+
+    // If token expired, try to refresh
+    if (err.statusCode === 401 && refreshToken) {
+      try {
+        console.log('Token expired, attempting refresh...');
+        const data = await spotifyApi.refreshAccessToken();
+        spotifyApi.setAccessToken(data.body['access_token']);
+
+        // Notify renderer of new token
+        event.sender.send('spotify-token-refreshed', {
+          accessToken: data.body['access_token'],
+          expiresIn: data.body['expires_in']
+        });
+
+        // Retry the request
+        const playlists = await spotifyApi.getUserPlaylists({ limit: 50 });
+        event.sender.send('spotify-playlists-received', playlists.body);
+      } catch (refreshErr) {
+        console.error('Error refreshing token:', refreshErr);
+        event.sender.send('spotify-error', 'Session expired. Please log in again.');
+      }
+    } else {
       event.sender.send('spotify-error', err.message);
-    });
+    }
+  }
 }
 
-function getSpotifyPlaylistTracks(event, playlistId) {
-  spotifyApi.getPlaylistTracks(playlistId, { limit: 100 })
-    .then(tracks => {
-      event.sender.send('spotify-playlist-tracks-received', { playlistId, tracks: tracks.body });
-    })
-    .catch(err => {
-      console.error('Error getting playlist tracks:', err);
+async function getSpotifyPlaylistTracks(event, playlistId) {
+  try {
+    const tracks = await spotifyApi.getPlaylistTracks(playlistId, { limit: 100 });
+    event.sender.send('spotify-playlist-tracks-received', { playlistId, tracks: tracks.body });
+  } catch (err) {
+    console.error('Error getting playlist tracks:', err);
+
+    // If token expired, try to refresh
+    if (err.statusCode === 401) {
+      try {
+        console.log('Token expired, attempting refresh...');
+        const data = await spotifyApi.refreshAccessToken();
+        spotifyApi.setAccessToken(data.body['access_token']);
+
+        // Notify renderer of new token
+        event.sender.send('spotify-token-refreshed', {
+          accessToken: data.body['access_token'],
+          expiresIn: data.body['expires_in']
+        });
+
+        // Retry the request
+        const tracks = await spotifyApi.getPlaylistTracks(playlistId, { limit: 100 });
+        event.sender.send('spotify-playlist-tracks-received', { playlistId, tracks: tracks.body });
+      } catch (refreshErr) {
+        console.error('Error refreshing token:', refreshErr);
+        event.sender.send('spotify-error', 'Session expired. Please log in again.');
+      }
+    } else {
       event.sender.send('spotify-error', err.message);
-    });
+    }
+  }
 }
 
-function getSpotifyTrackFeatures(event, trackId) {
-  spotifyApi.getAudioFeaturesForTrack(trackId)
-    .then(features => {
-      event.sender.send('spotify-track-features-received', { trackId, features: features.body });
-    })
-    .catch(err => {
-      console.error('Error getting track features:', err);
+async function getSpotifyTrackFeatures(event, trackId) {
+  try {
+    const features = await spotifyApi.getAudioFeaturesForTrack(trackId);
+    event.sender.send('spotify-track-features-received', { trackId, features: features.body });
+  } catch (err) {
+    console.error('Error getting track features:', err);
+
+    // If token expired, try to refresh
+    if (err.statusCode === 401) {
+      try {
+        console.log('Token expired, attempting refresh...');
+        const data = await spotifyApi.refreshAccessToken();
+        spotifyApi.setAccessToken(data.body['access_token']);
+
+        // Notify renderer of new token
+        event.sender.send('spotify-token-refreshed', {
+          accessToken: data.body['access_token'],
+          expiresIn: data.body['expires_in']
+        });
+
+        // Retry the request
+        const features = await spotifyApi.getAudioFeaturesForTrack(trackId);
+        event.sender.send('spotify-track-features-received', { trackId, features: features.body });
+      } catch (refreshErr) {
+        console.error('Error refreshing token:', refreshErr);
+        event.sender.send('spotify-error', 'Session expired. Please log in again.');
+      }
+    } else {
       event.sender.send('spotify-error', err.message);
+    }
+  }
+}
+
+
+// Download track from YouTube using yt-dlp
+async function downloadTrackFromYouTube(event, trackInfo) {
+  try {
+    const { title, artist, album, albumArt } = trackInfo;
+    const searchQuery = `${artist} - ${title} official audio`;
+
+    console.log('Searching YouTube for:', searchQuery);
+    event.sender.send('download-progress', { message: `Searching YouTube for "${title}"...` });
+
+    // Search YouTube using yt-search
+    const searchResults = await yts(searchQuery);
+    const videos = searchResults.videos;
+
+    if (!videos || videos.length === 0) {
+      throw new Error('No YouTube results found');
+    }
+
+    const video = videos[0];
+    console.log('Found video:', video.title, '|', video.url);
+    event.sender.send('download-progress', { message: `Found: ${video.title}` });
+
+    // Create Music/Spectra directory
+    const musicPath = app.getPath('music');
+    const spectraPath = path.join(musicPath, 'Spectra');
+
+    if (!fs.existsSync(spectraPath)) {
+      fs.mkdirSync(spectraPath, { recursive: true });
+      console.log('Created directory:', spectraPath);
+    }
+
+    const sanitizedFilename = `${artist} - ${title}`.replace(/[<>:"/\\|?*]/g, '_');
+    const outputPath = path.join(spectraPath, sanitizedFilename);
+
+    // Download album art from Spotify if available
+    let thumbnailPath = null;
+    if (albumArt) {
+      try {
+        event.sender.send('download-progress', { message: 'Downloading album art...' });
+        const https = require('https');
+        thumbnailPath = path.join(spectraPath, `${sanitizedFilename}_cover.jpg`);
+
+        await new Promise((resolve, reject) => {
+          const file = fs.createWriteStream(thumbnailPath);
+          https.get(albumArt, (response) => {
+            response.pipe(file);
+            file.on('finish', () => {
+              file.close();
+              console.log('Album art downloaded:', thumbnailPath);
+              resolve();
+            });
+          }).on('error', (err) => {
+            fs.unlink(thumbnailPath, () => { });
+            thumbnailPath = null;
+            console.log('Failed to download album art:', err.message);
+            resolve(); // Continue even if album art fails
+          });
+        });
+      } catch (err) {
+        console.log('Error downloading album art:', err.message);
+        thumbnailPath = null;
+      }
+    }
+
+    event.sender.send('download-progress', { message: 'Downloading audio...' });
+
+    // Download using yt-dlp with metadata
+    await youtubedl(video.url, {
+      format: 'bestaudio',
+      output: outputPath + '.%(ext)s',
+      noPlaylist: true,
+      extractorArgs: 'youtube:player_client=default',
+      noWarnings: true,
+      addMetadata: true,
+      metadataFromTitle: '%(artist)s - %(title)s'
     });
+
+    // Find the downloaded file
+    const files = fs.readdirSync(spectraPath);
+    const downloadedFile = files.find(f =>
+      f.startsWith(sanitizedFilename) &&
+      !f.endsWith('_cover.jpg') &&
+      !f.endsWith('.jpg') &&
+      !f.endsWith('.webp')
+    );
+
+    if (!downloadedFile) {
+      throw new Error('Downloaded file not found');
+    }
+
+    const downloadedPath = path.join(spectraPath, downloadedFile);
+    console.log('Downloaded file:', downloadedPath);
+
+    // Convert to MP3 if not already MP3
+    const mp3Path = path.join(spectraPath, `${sanitizedFilename}.mp3`);
+
+    if (!downloadedFile.endsWith('.mp3')) {
+      event.sender.send('download-progress', { message: 'Converting to MP3...' });
+
+      await new Promise((resolve, reject) => {
+        const command = ffmpeg(downloadedPath)
+          .audioBitrate(320)
+          .audioCodec('libmp3lame')
+          .toFormat('mp3');
+
+        // Add album art if available
+        if (thumbnailPath && fs.existsSync(thumbnailPath)) {
+          command.addInput(thumbnailPath)
+            .outputOptions([
+              '-map 0:a',
+              '-map 1:0',
+              '-c:v copy',
+              '-id3v2_version 3',
+              '-metadata:s:v title="Album cover"',
+              '-metadata:s:v comment="Cover (front)"'
+            ]);
+        }
+
+        command
+          .on('end', () => {
+            console.log('Conversion complete:', mp3Path);
+            // Delete original file
+            try {
+              fs.unlinkSync(downloadedPath);
+              console.log('Deleted original file:', downloadedPath);
+            } catch (e) {
+              console.log('Could not delete original file:', e.message);
+            }
+            resolve();
+          })
+          .on('error', (err) => {
+            console.error('Conversion error:', err);
+            reject(err);
+          })
+          .save(mp3Path);
+      });
+    } else {
+      // Already MP3, just rename if needed
+      if (downloadedPath !== mp3Path) {
+        fs.renameSync(downloadedPath, mp3Path);
+      }
+    }
+
+    // Clean up temporary thumbnail files
+    try {
+      const tempThumb = outputPath + '.jpg';
+      if (fs.existsSync(tempThumb)) fs.unlinkSync(tempThumb);
+      const webpThumb = outputPath + '.webp';
+      if (fs.existsSync(webpThumb)) fs.unlinkSync(webpThumb);
+    } catch (e) {
+      // Ignore cleanup errors
+    }
+
+    console.log('Final MP3 file:', mp3Path);
+    event.sender.send('download-complete', {
+      path: mp3Path,
+      filename: `${sanitizedFilename}.mp3`
+    });
+
+  } catch (error) {
+    console.error('Error downloading track:', error);
+    event.sender.send('download-error', error.message || 'Download failed');
+  }
 }

@@ -348,7 +348,7 @@ body {
 }
 
 .right-panel-section label {
-  display: block;
+  display: flex;
   font-size: 13px;
   color: #aaa;
   text-transform: uppercase;
@@ -1126,8 +1126,11 @@ canvas {
 /* Preset buttons in right panel */
 .preset-buttons-section {
   margin-top: auto;
-  padding: 10px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 20px;
+  border-top: 1px solid #333;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  gap: 8px;
 }
 
 .preset-btn-panel {
@@ -1135,16 +1138,18 @@ canvas {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 10px 16px;
   background: rgba(0, 255, 136, 0.08);
   border: 1px solid rgba(0, 255, 136, 0.25);
-  border-radius: 3px;
+  border-radius: 4px;
   color: #00ff88;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   flex: 1;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .preset-btn-panel:hover {
