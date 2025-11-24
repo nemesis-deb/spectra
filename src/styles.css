@@ -1027,6 +1027,46 @@ option {
   justify-content: center;
   padding: 20px;
   overflow: auto;
+  position: relative;
+}
+
+.canvas-container.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: #000;
+  padding: 0;
+}
+
+.fullscreen-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #444;
+  color: #00ff88;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.fullscreen-btn:hover {
+  background: rgba(0, 255, 136, 0.2);
+  border-color: #00ff88;
+  transform: scale(1.05);
+}
+
+.canvas-container.fullscreen .fullscreen-btn {
+  top: 10px;
+  right: 10px;
 }
 
 canvas {
@@ -1036,6 +1076,14 @@ canvas {
   max-width: 100%;
   max-height: 100%;
   /* GPU acceleration controlled via JavaScript settings */
+}
+
+.canvas-container.fullscreen canvas {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw;
+  max-height: 100vh;
+  border: none;
 }
 
 /* Old visualizer selector bar - removed, now in right panel */
@@ -1302,6 +1350,29 @@ canvas {
   cursor: pointer;
   border-radius: 4px;
   background: transparent;
+}
+
+.setting-item select.setting-select {
+  width: 100%;
+  padding: 10px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.setting-item select.setting-select:hover {
+  border-color: #00ff88;
+  background: #333;
+}
+
+.setting-item select.setting-select:focus {
+  outline: none;
+  border-color: #00ff88;
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.1);
 }
 
 .setting-control span {
