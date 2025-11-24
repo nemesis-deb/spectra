@@ -34,11 +34,7 @@ process.on('unhandledRejection', (reason, promise) => {
 // Note: Spotify integration is for metadata/playlists only (no DRM playback)
 // Widevine/DRM support removed - using local file playback only
 
-// Suppress GPU-related warnings
-app.commandLine.appendSwitch('no-sandbox');
-app.commandLine.appendSwitch('disable-gpu-sandbox');
-app.commandLine.appendSwitch('ignore-gpu-blocklist');
-app.commandLine.appendSwitch('disable-software-rasterizer');
+
 
 // Reduce console spam
 if (process.env.NODE_ENV !== 'development') {
