@@ -4,16 +4,18 @@
   "description": "A beautiful audio visualizer app with multiple visualization modes and customization options.",
   "main": "main.js",
   "scripts": {
-    "start": "bash -c 'if [ -d dist/squashfs-root ]; then ./run-spectra.sh; else echo \"Please run npm run build:linux first to build the application\"; fi'",
-    "start:dev": "electron . --no-sandbox --disable-gpu-sandbox --use-gl=desktop",
-    "start:quiet": "cross-env ELECTRON_ENABLE_LOGGING=0 electron . --no-sandbox --disable-gpu-sandbox",
+    "start": "electron . --no-sandbox",
+    "start:quiet": "cross-env ELECTRON_ENABLE_LOGGING=0 electron . --no-sandbox",
     "build": "electron-builder",
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux && cd dist && ./Spectra-1.0.2.AppImage --appimage-extract && cd ..",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Katuyo",
+  "author": {
+    "name": "Katuyo",
+    "email": "eloi.tisserand@epitech.eu"
+  },
   "license": "MIT",
   "devDependencies": {
     "electron": "^28.0.0",
@@ -69,8 +71,7 @@
     },
     "linux": {
       "target": [
-        "AppImage",
-        "deb"
+        "AppImage"
       ],
       "icon": "build/icon.png",
       "category": "Audio"

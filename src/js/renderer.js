@@ -297,6 +297,8 @@ const folderPath = document.getElementById('folderPath');
 const searchInput = document.getElementById('searchInput');
 const fileCount = document.getElementById('fileCount');
 const currentTimeEl = document.getElementById('currentTime');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const canvasContainer = document.getElementById('canvasContainer');
 const durationEl = document.getElementById('duration');
 const progressBar = document.getElementById('progressBar');
 const progressFill = document.getElementById('progressFill');
@@ -673,6 +675,43 @@ if (closeQueueBtn) {
     console.error('Close queue button not found!');
 }
 
+// Fullscreen toggle
+if (fullscreenBtn && canvasContainer) {
+    fullscreenBtn.addEventListener('click', () => {
+        canvasContainer.classList.toggle('fullscreen');
+        
+        // Update button icon based on state
+        const isFullscreen = canvasContainer.classList.contains('fullscreen');
+        fullscreenBtn.innerHTML = isFullscreen 
+            ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>'
+            : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+        
+        fullscreenBtn.title = isFullscreen ? 'Exit Fullscreen' : 'Toggle Fullscreen';
+        
+        // Resize canvas when toggling fullscreen
+        if (visualizerManager && visualizerManager.getCurrent()) {
+            setTimeout(() => {
+                visualizerManager.getCurrent().resize();
+            }, 100);
+        }
+    });
+    
+    // ESC key to exit fullscreen
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && canvasContainer.classList.contains('fullscreen')) {
+            canvasContainer.classList.remove('fullscreen');
+            fullscreenBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+            fullscreenBtn.title = 'Toggle Fullscreen';
+            
+            if (visualizerManager && visualizerManager.getCurrent()) {
+                setTimeout(() => {
+                    visualizerManager.getCurrent().resize();
+                }, 100);
+            }
+        }
+    });
+}
+
 // Update queue display
 function updateQueueDisplay() {
     if (audioFiles.length === 0) {
@@ -959,6 +998,87 @@ document.addEventListener('keydown', (e) => {
         closeSettingsModal();
     }
 });
+
+// Canvas Resolution Settings
+const canvasResolutionSelect = document.getElementById('canvasResolution');
+const customResolutionContainer = document.getElementById('customResolutionContainer');
+const customWidthInput = document.getElementById('customWidth');
+const customHeightInput = document.getElementById('customHeight');
+const applyCustomResolutionBtn = document.getElementById('applyCustomResolution');
+
+// Load saved resolution
+const savedResolution = localStorage.getItem('canvasResolution') || '1280x720';
+if (canvasResolutionSelect) {
+    const isCustom = !['800x400', '1200x600', '1600x800', '1920x1080', '2560x1440', '3840x2160'].includes(savedResolution);
+    if (isCustom) {
+        canvasResolutionSelect.value = 'custom';
+        customResolutionContainer.style.display = 'block';
+        const [w, h] = savedResolution.split('x');
+        customWidthInput.value = w;
+        customHeightInput.value = h;
+    } else {
+        canvasResolutionSelect.value = savedResolution;
+    }
+    
+    // Apply saved resolution on load
+    const [width, height] = savedResolution.split('x').map(Number);
+    canvas.width = width;
+    canvas.height = height;
+}
+
+// Handle resolution change
+if (canvasResolutionSelect) {
+    canvasResolutionSelect.addEventListener('change', (e) => {
+        const value = e.target.value;
+        
+        if (value === 'custom') {
+            customResolutionContainer.style.display = 'block';
+        } else {
+            customResolutionContainer.style.display = 'none';
+            const [width, height] = value.split('x').map(Number);
+            applyCanvasResolution(width, height);
+            localStorage.setItem('canvasResolution', value);
+        }
+    });
+}
+
+// Apply custom resolution
+if (applyCustomResolutionBtn) {
+    applyCustomResolutionBtn.addEventListener('click', () => {
+        const width = parseInt(customWidthInput.value);
+        const height = parseInt(customHeightInput.value);
+        
+        if (width < 400 || width > 7680 || height < 200 || height > 4320) {
+            alert('Please enter valid dimensions:\nWidth: 400-7680\nHeight: 200-4320');
+            return;
+        }
+        
+        applyCanvasResolution(width, height);
+        localStorage.setItem('canvasResolution', `${width}x${height}`);
+    });
+}
+
+function applyCanvasResolution(width, height) {
+    canvas.width = width;
+    canvas.height = height;
+    
+    // Reinitialize all visualizers with new canvas size
+    if (visualizerManager) {
+        visualizerManager.visualizers.forEach(viz => {
+            if (viz.init) {
+                viz.init(canvas, ctx);
+            }
+        });
+        
+        // Trigger resize on current visualizer
+        const current = visualizerManager.getCurrent();
+        if (current && current.resize) {
+            current.resize();
+        }
+    }
+    
+    console.log(`Canvas resolution changed to ${width}x${height}`);
+}
 
 // Update visualizer tweaks panel
 function updateTweaksPanel() {

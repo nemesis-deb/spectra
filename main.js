@@ -17,6 +17,7 @@ const youtubedl = require('youtube-dl-exec');
 const yts = require('yt-search');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const ffmpeg = require('fluent-ffmpeg');
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -459,52 +460,80 @@ app.on('activate', () => {
 
 // Initialize Discord Rich Presence
 function initDiscordRPC() {
-  DiscordRPC.register(clientId);
-  rpcClient = new DiscordRPC.Client({ transport: 'ipc' });
+  try {
+    // Don't register on Linux - it can cause issues with Flatpak
+    if (process.platform !== 'linux') {
+      DiscordRPC.register(clientId);
+    }
 
-  rpcClient.on('ready', () => {
-    console.log('Discord RPC connected');
-    setActivity({
-      state: 'Idle',
-      details: 'No song playing'
+    rpcClient = new DiscordRPC.Client({ transport: 'ipc' });
+
+    rpcClient.on('ready', () => {
+      console.log('Discord RPC connected successfully!');
+      setActivity({
+        state: 'Idle',
+        details: 'No song playing'
+      });
     });
-  });
 
-  rpcClient.login({ clientId }).catch(err => {
-    console.error('Failed to connect to Discord:', err);
-  });
+    rpcClient.on('disconnected', () => {
+      console.log('Discord RPC disconnected');
+      rpcClient = null;
+    });
+
+    rpcClient.on('error', (err) => {
+      console.error('Discord RPC error:', err);
+      rpcClient = null;
+    });
+
+    // Try to login
+    rpcClient.login({ clientId }).catch(err => {
+      console.error('Failed to connect to Discord:', err.message);
+      console.log('Continuing without Discord Rich Presence');
+      rpcClient = null;
+    });
+  } catch (err) {
+    console.error('Failed to initialize Discord RPC:', err);
+    rpcClient = null;
+  }
 }
 
 // Update Discord activity
 function setActivity(data) {
   if (!rpcClient) return;
 
-  const activity = {
-    details: data.details || 'Audio Visualizer',
-    state: data.state || 'Idle',
-    largeImageKey: 'icon', // You'll need to upload this in Discord Developer Portal
-    largeImageText: 'Audio Visualizer',
-    instance: false,
-  };
+  try {
+    const activity = {
+      details: data.details || 'Audio Visualizer',
+      state: data.state || 'Idle',
+      largeImageKey: 'icon', // You'll need to upload this in Discord Developer Portal
+      largeImageText: 'Audio Visualizer',
+      instance: false,
+    };
 
-  if (data.startTimestamp) {
-    activity.startTimestamp = data.startTimestamp;
-  }
-
-  if (data.endTimestamp) {
-    activity.endTimestamp = data.endTimestamp;
-  }
-
-  // Set activity with type 2 for "Listening"
-  rpcClient.request('SET_ACTIVITY', {
-    pid: process.pid,
-    activity: {
-      ...activity,
-      type: 2 // 0 = Playing, 1 = Streaming, 2 = Listening, 3 = Watching
+    if (data.startTimestamp) {
+      activity.startTimestamp = data.startTimestamp;
     }
-  }).catch(err => {
-    console.error('Failed to set Discord activity:', err);
-  });
+
+    if (data.endTimestamp) {
+      activity.endTimestamp = data.endTimestamp;
+    }
+
+    // Set activity with type 2 for "Listening"
+    rpcClient.request('SET_ACTIVITY', {
+      pid: process.pid,
+      activity: {
+        ...activity,
+        type: 2 // 0 = Playing, 1 = Streaming, 2 = Listening, 3 = Watching
+      }
+    }).catch(err => {
+      console.error('Failed to set Discord activity:', err);
+      rpcClient = null;
+    });
+  } catch (err) {
+    console.error('Error in setActivity:', err);
+    rpcClient = null;
+  }
 }
 
 // Spotify OAuth functions
