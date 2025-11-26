@@ -21,7 +21,7 @@ export class VolumeHistoryVisualizer {
         console.log('VolumeHistoryVisualizer: Initial analyser:', this.analyser);
 
         // Configuration
-        this.historyDuration = 1500; // 1.5 seconds
+        this.historyDuration = 1000; // 1 seconds
         this.fps = 60;
         this.maxHistoryLength = (this.historyDuration / 1000) * this.fps;
         this.history = new Array(this.maxHistoryLength).fill(0);

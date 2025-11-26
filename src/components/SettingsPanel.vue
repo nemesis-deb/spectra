@@ -243,6 +243,12 @@
                 <input type="range" v-model.number="albumArtRotationSpeed" min="10" max="200" @input="onSettingChange('albumArtRotationSpeed', albumArtRotationSpeed)">
                 <p style="font-size: 12px; color: #666; margin: 4px 0 0 0;">Time for one full rotation (lower = faster)</p>
               </div>
+              
+              <div v-if="albumArtWallpaper" class="setting-item">
+                <label>Zoom Level: <span>{{ albumArtZoom.toFixed(2) }}x</span></label>
+                <input type="range" v-model.number="albumArtZoom" min="1.0" max="3.0" step="0.1" @input="onSettingChange('albumArtZoom', albumArtZoom)">
+                <p style="font-size: 12px; color: #666; margin: 4px 0 0 0;">Zoom level to avoid visible corners after blur (default: 1.5x)</p>
+              </div>
             </div>
           </div>
 
@@ -425,6 +431,11 @@ const albumArtOpacity = computed({
 const albumArtRotationSpeed = computed({
   get: () => settingsStore.albumArtRotationSpeed || 50,
   set: (value) => settingsStore.updateSetting('albumArtRotationSpeed', value)
+});
+
+const albumArtZoom = computed({
+  get: () => settingsStore.albumArtZoom || 1.5,
+  set: (value) => settingsStore.updateSetting('albumArtZoom', value)
 });
 const openDevToolsOnStartup = computed({
   get: () => settingsStore.openDevToolsOnStartup,

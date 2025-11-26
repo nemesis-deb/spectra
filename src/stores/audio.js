@@ -1,35 +1,41 @@
 import { defineStore } from 'pinia';
 
 export const useAudioStore = defineStore('audio', {
-  state: () => ({
-    // Audio playback state
-    isPlaying: false,
-    currentTrack: null,
-    currentTime: 0,
-    duration: 0,
-    volume: 1.0,
-    playbackRate: 1.0,
-    shuffle: false,
-    repeat: 'off', // 'off', 'all', 'one'
+  state: () => {
+    // Load saved volume from localStorage on store initialization
+    const savedVolume = parseFloat(localStorage.getItem('audioVolume'));
+    const initialVolume = (savedVolume !== null && !isNaN(savedVolume)) ? savedVolume : 1.0;
     
-    // Audio context
-    audioContext: null,
-    analyserNode: null,
-    sourceNode: null,
-    
-    // Track info
-    title: 'No song playing',
-    artist: '',
-    album: '',
-    albumArt: null,
-    bpm: null,
-    key: null,
-    gain: 0, // dB gain
-    
-    // Queue
-    queue: [],
-    currentIndex: -1
-  }),
+    return {
+      // Audio playback state
+      isPlaying: false,
+      currentTrack: null,
+      currentTime: 0,
+      duration: 0,
+      volume: initialVolume,
+      playbackRate: 1.0,
+      shuffle: false,
+      repeat: 'off', // 'off', 'all', 'one'
+      
+      // Audio context
+      audioContext: null,
+      analyserNode: null,
+      sourceNode: null,
+      
+      // Track info
+      title: 'No song playing',
+      artist: '',
+      album: '',
+      albumArt: null,
+      bpm: null,
+      key: null,
+      gain: 0, // dB gain
+      
+      // Queue
+      queue: [],
+      currentIndex: -1
+    };
+  },
 
   getters: {
     hasNext: (state) => state.currentIndex < state.queue.length - 1,

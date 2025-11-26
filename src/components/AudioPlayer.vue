@@ -311,6 +311,11 @@ const volumePercent = computed({
   }
 });
 
+// Watch for volume changes in store and update UI if needed (after volumePercent is defined)
+// Note: We don't need this watch since volumePercent.get() already reads from audioStore.volume
+// The computed property will automatically update when the store changes
+// This watch was causing initialization issues, so it's removed
+
 const repeatTitle = computed(() => {
   switch (repeatMode.value) {
     case 'off': return 'Repeat Off';
@@ -701,10 +706,45 @@ onMounted(async () => {
   // Start checking after a short delay
   setTimeout(waitForCreateCustomSelect, 100);
   
-  // Load saved volume
+  // Load saved volume and ensure UI and gainNode are synced
+  // Wait a bit to ensure store is fully initialized
+  await nextTick();
+  await new Promise(resolve => setTimeout(resolve, 50));
+  
   const savedVolume = parseFloat(localStorage.getItem('audioVolume'));
-  if (savedVolume !== null && !isNaN(savedVolume)) {
-    volumePercent.value = Math.round(savedVolume * 100);
+  const volumeToUse = (savedVolume !== null && !isNaN(savedVolume)) ? savedVolume : 1.0;
+  
+  console.log('[AudioPlayer] Loading volume - localStorage:', savedVolume, 'Using:', volumeToUse, 'Store volume:', audioStore.volume);
+  
+  // Always set the volume through the store to ensure reactivity
+  audioStore.setVolume(volumeToUse);
+  
+  // Wait for reactivity to propagate
+  await nextTick();
+  
+  // Check what the computed property currently shows
+  const currentPercent = volumePercent.value;
+  const expectedPercent = Math.round(volumeToUse * 100);
+  console.log('[AudioPlayer] Current slider value:', currentPercent + '%', 'Expected:', expectedPercent + '%');
+  
+  // Force update if there's a mismatch
+  if (currentPercent !== expectedPercent) {
+    console.log('[AudioPlayer] Mismatch detected! Forcing update...');
+    // Directly set the value - this will trigger the setter
+    volumePercent.value = expectedPercent;
+    await nextTick();
+    console.log('[AudioPlayer] After update, slider value:', volumePercent.value + '%');
+  }
+  
+  // Also directly apply to gainNode as a fallback (in case setter didn't work)
+  if (window.spectra && window.spectra.audioPlayer && window.spectra.audioPlayer.setVolume) {
+    window.spectra.audioPlayer.setVolume(volumeToUse);
+    console.log('[AudioPlayer] Applied volume to Spectra audioPlayer');
+  } else if (window.gainNode) {
+    window.gainNode.gain.value = volumeToUse;
+    console.log('[AudioPlayer] Applied volume to gainNode:', window.gainNode.gain.value);
+  } else {
+    console.warn('[AudioPlayer] No gainNode available to apply volume');
   }
   
   // Load saved DB gain and apply it (affects visualizer intensity)

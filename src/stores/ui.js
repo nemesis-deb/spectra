@@ -6,6 +6,11 @@ export const useUIStore = defineStore('ui', {
     settingsPanelOpen: false,
     queuePanelOpen: false,
     
+    // Panel visibility toggles
+    songLibraryVisible: true,  // File Browser / Sidebar
+    musicPlayerVisible: true,  // Audio Player
+    visualizerManagerVisible: true,  // Visualizer Panel
+    
     // Sidebar tab system (3 tabs: files, spotify, youtube)
     activeSidebarTab: 'files', // 'files', 'spotify', or 'youtube'
     
@@ -88,6 +93,18 @@ export const useUIStore = defineStore('ui', {
     
     closeAllMenus() {
       this.activeMenu = null;
+    },
+    
+    toggleSongLibrary() {
+      this.songLibraryVisible = !this.songLibraryVisible;
+    },
+    
+    toggleMusicPlayer() {
+      this.musicPlayerVisible = !this.musicPlayerVisible;
+    },
+    
+    toggleVisualizerManager() {
+      this.visualizerManagerVisible = !this.visualizerManagerVisible;
     }
   }
 });

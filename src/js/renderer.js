@@ -267,13 +267,15 @@ window.audioManager = {
 
             this.externalAudio = mediaElement;
             this.externalAudioSource = ctx.createMediaElementSource(mediaElement);
-            // Connect main visualizer: source → analyser → volumeGain → destination (not affected by dB gain)
-            this.externalAudioSource.connect(analyser);
+            // Connect main visualizer: source → dbGainNode → analyser → gainNode → destination
+            // dbGainNode affects visualizer intensity, gainNode affects output volume
+            this.externalAudioSource.connect(dbGainNode);
+            dbGainNode.connect(analyser);
             analyser.connect(gainNode);
             gainNode.connect(ctx.destination);
 
-            // Connect volume history: source → dbGain → volumeHistoryAnalyser (affected by dB gain)
-            this.externalAudioSource.connect(dbGainNode);
+            // Connect volume history: source → dbGain → volumeHistoryAnalyser (also affected by dB gain)
+            // Share the same dbGainNode output for volume history
             dbGainNode.connect(volumeHistoryAnalyser);
 
             // Start volume history visualizer with its own analyser
@@ -1225,13 +1227,15 @@ progressBar.addEventListener('click', (e) => {
         audioSource.buffer = audioBuffer;
         audioSource.playbackRate.value = playbackRate;
 
-        // Connect main visualizer: source → analyser → volumeGain → destination (not affected by dB gain)
-        audioSource.connect(analyser);
+        // Connect main visualizer: source → dbGainNode → analyser → gainNode → destination
+        // dbGainNode affects visualizer intensity, gainNode affects output volume
+        audioSource.connect(dbGainNode);
+        dbGainNode.connect(analyser);
         analyser.connect(gainNode);
         gainNode.connect(audioContext.destination);
 
-        // Connect volume history: source → dbGain → volumeHistoryAnalyser (affected by dB gain)
-        audioSource.connect(dbGainNode);
+        // Connect volume history: dbGainNode → volumeHistoryAnalyser (also affected by dB gain)
+        // Share the same dbGainNode output for volume history
         dbGainNode.connect(volumeHistoryAnalyser);
 
         // Handle when audio ends (same as play button)
@@ -2122,17 +2126,19 @@ playBtn.addEventListener('click', () => {
     audioSource.buffer = audioBuffer;
     audioSource.playbackRate.value = playbackRate;
 
-    // Connect main visualizer: source → analyser → volumeGain → destination (not affected by dB gain)
-    audioSource.connect(analyser);
+    // Connect main visualizer: source → dbGainNode → analyser → gainNode → destination
+    // dbGainNode affects visualizer intensity, gainNode affects output volume
+    audioSource.connect(dbGainNode);
+    dbGainNode.connect(analyser);
     analyser.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    // Connect volume history: source → dbGain → volumeHistoryAnalyser (affected by dB gain)
-    audioSource.connect(dbGainNode);
+    // Connect volume history: dbGainNode → volumeHistoryAnalyser (also affected by dB gain)
+    // Share the same dbGainNode output for volume history
     dbGainNode.connect(volumeHistoryAnalyser);
     // volumeHistoryAnalyser doesn't need to connect to destination, it's just for analysis
 
-    console.log('Audio graph connected: main visualizer (source → analyser → gain → destination), volume history (source → dbGain → volumeHistoryAnalyser)');
+    console.log('Audio graph connected: main visualizer (source → dbGainNode → analyser → gainNode → destination), volume history (dbGainNode → volumeHistoryAnalyser)');
 
     // Start volume history visualizer with its own analyser
     volumeHistoryVisualizer.updateAnalyser(volumeHistoryAnalyser);
@@ -3821,13 +3827,15 @@ function connectSpotifyPlayerToWebAudio() {
                         }
 
                         spotifyAudioSource = audioContext.createMediaElementSource(spotifyMediaElement);
-                        // Connect main visualizer: source → analyser → volumeGain → destination (not affected by dB gain)
-                        spotifyAudioSource.connect(analyser);
+                        // Connect main visualizer: source → dbGainNode → analyser → gainNode → destination
+                        // dbGainNode affects visualizer intensity, gainNode affects output volume
+                        spotifyAudioSource.connect(dbGainNode);
+                        dbGainNode.connect(analyser);
                         analyser.connect(gainNode);
                         gainNode.connect(audioContext.destination);
 
-                        // Connect volume history: source → dbGain → volumeHistoryAnalyser (affected by dB gain)
-                        spotifyAudioSource.connect(dbGainNode);
+                        // Connect volume history: dbGainNode → volumeHistoryAnalyser (also affected by dB gain)
+                        // Share the same dbGainNode output for volume history
                         dbGainNode.connect(volumeHistoryAnalyser);
 
                         console.log('✅ Successfully connected Spotify player to Web Audio API!');

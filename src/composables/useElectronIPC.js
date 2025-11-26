@@ -18,9 +18,9 @@ export function useElectronIPC() {
   }
 
   // Send message to main process
-  const send = (channel, data) => {
+  const send = (channel, ...args) => {
     if (ipcRenderer) {
-      ipcRenderer.send(channel, data);
+      ipcRenderer.send(channel, ...args);
     } else {
       console.warn('IPC not available (not in Electron environment)');
     }

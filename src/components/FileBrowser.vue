@@ -464,17 +464,17 @@ const loadFileMetadata = async (files, force = false) => {
         
         // Load album art concurrently (Amethyst approach)
         if (window.albumArtManager && (!fileAlbumArts.value.has(file.path) || force)) {
-          try {
+            try {
             // extractAlbumArt will check cache first (both memory and persistent)
             // and return cached value if available, or extract if not
-            const artUrl = await window.albumArtManager.extractAlbumArt(file.path);
-            if (artUrl) {
-              albumArtUpdates.set(file.path, artUrl);
-              console.log('[FileBrowser] Album art loaded for:', file.name);
-            }
+              const artUrl = await window.albumArtManager.extractAlbumArt(file.path);
+              if (artUrl) {
+                albumArtUpdates.set(file.path, artUrl);
+                console.log('[FileBrowser] Album art loaded for:', file.name);
+                }
             // Note: null values are already cached in AlbumArtManager, so we don't need to cache them here
-          } catch (error) {
-            console.warn('[FileBrowser] Failed to extract album art for:', file.name, error.message);
+            } catch (error) {
+              console.warn('[FileBrowser] Failed to extract album art for:', file.name, error.message);
           }
         } else if (window.albumArtManager && fileAlbumArts.value.has(file.path)) {
           // Already have it in FileBrowser's local cache, but check if it's also in AlbumArtManager cache

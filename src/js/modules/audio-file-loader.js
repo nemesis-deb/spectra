@@ -176,15 +176,39 @@ export class AudioFileLoader {
             this.audioSource = this.audioContext.createBufferSource();
             this.audioSource.buffer = this.audioBuffer;
             
-            // Connect audio source -> gain node -> analyser -> destination
-            // This ensures the visualizer gets the audio data
-            if (this.gainNode) {
+            // Connect audio source -> dbGainNode -> analyser -> gainNode -> destination
+            // dbGainNode affects visualizer intensity, gainNode affects output volume
+            // Check if dbGainNode is available (from window or passed in)
+            const dbGainNode = window.dbGainNode || null;
+            
+            if (dbGainNode) {
+                // Connect through dbGainNode first (affects visualizer)
+                this.audioSource.connect(dbGainNode);
+                if (this.analyser) {
+                    dbGainNode.connect(this.analyser);
+                    if (this.gainNode && this.gainNode !== this.analyser) {
+                        this.analyser.connect(this.gainNode);
+                        this.gainNode.connect(this.audioContext.destination);
+                    } else {
+                        // No gainNode, connect analyser directly to destination
+                        this.analyser.connect(this.audioContext.destination);
+                    }
+                } else {
+                    // No analyser, connect dbGainNode -> gainNode -> destination
+                    if (this.gainNode) {
+                        dbGainNode.connect(this.gainNode);
+                        this.gainNode.connect(this.audioContext.destination);
+                    } else {
+                        dbGainNode.connect(this.audioContext.destination);
+                    }
+                }
+            } else if (this.gainNode) {
+                // Fallback: no dbGainNode, use old connection
                 this.audioSource.connect(this.gainNode);
                 if (this.analyser && this.analyser !== this.gainNode) {
                     this.gainNode.connect(this.analyser);
                     this.analyser.connect(this.audioContext.destination);
                 } else {
-                    // No analyser, connect gain directly to destination
                     this.gainNode.connect(this.audioContext.destination);
                 }
             } else if (this.analyser) {

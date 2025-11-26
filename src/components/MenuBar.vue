@@ -21,10 +21,12 @@
           <div 
             v-else
             class="menu-dropdown-item"
+            :class="{ 'menu-item-checked': isPanelEnabled(item.action) }"
             @click.stop="handleMenuAction(item.action)"
           >
             <span>{{ item.label }}</span>
-            <span v-if="item.accelerator" class="menu-accelerator">
+            <span v-if="isPanelEnabled(item.action)" class="menu-checkmark">✓</span>
+            <span v-else-if="item.accelerator" class="menu-accelerator">
               {{ item.accelerator }}
             </span>
           </div>
@@ -77,6 +79,9 @@ const menus = [
     name: 'view',
     label: 'View',
     items: [
+      { label: 'Song Library', action: 'toggle-song-library' },
+      { label: 'Music Player', action: 'toggle-music-player' },
+      { label: 'Visualizer Manager', action: 'toggle-visualizer-manager' },
       { type: 'separator' },
       { label: 'Reload', action: 'reload', accelerator: 'Ctrl+R' },
       { label: 'Force Reload', action: 'forceReload', accelerator: 'Ctrl+Shift+R' },
@@ -128,12 +133,20 @@ const handleMenuAction = (action) => {
     uiStore.toggleSettingsPanel();
   } else if (action === 'open-folder') {
     send('open-folder-dialog');
-        } else if (action === 'toggleFullscreen') {
+  } else if (action === 'toggleFullscreen') {
     uiStore.setFullscreen(!uiStore.fullscreen);
+  } else if (action === 'toggle-song-library') {
+    uiStore.toggleSongLibrary();
+  } else if (action === 'toggle-music-player') {
+    uiStore.toggleMusicPlayer();
+  } else if (action === 'toggle-visualizer-manager') {
+    uiStore.toggleVisualizerManager();
   }
   
-  // Send action to main process
-  send('menu-action', action);
+  // Send action to main process (if not a local action)
+  if (!['toggle-song-library', 'toggle-music-player', 'toggle-visualizer-manager'].includes(action)) {
+    send('menu-action', action);
+  }
   
   // Close menu after action
   activeMenu.value = null;
@@ -145,16 +158,23 @@ const handleEditAction = (event, action) => {
   document.execCommand(action);
 };
 
+// Dropdown positioning is now handled by CSS (position: absolute relative to menu-item)
 const setDropdownRef = (menuName, el) => {
   if (el) {
     dropdownRefs.value[menuName] = el;
-    // Position dropdown
-    const menuItem = el.closest('.menu-item');
-    if (menuItem) {
-      const rect = menuItem.getBoundingClientRect();
-      el.style.left = rect.left + 'px';
-      el.style.top = '40px';
-    }
+  }
+};
+
+const isPanelEnabled = (action) => {
+  switch (action) {
+    case 'toggle-song-library':
+      return uiStore.songLibraryVisible;
+    case 'toggle-music-player':
+      return uiStore.musicPlayerVisible;
+    case 'toggle-visualizer-manager':
+      return uiStore.visualizerManagerVisible;
+    default:
+      return false;
   }
 };
 

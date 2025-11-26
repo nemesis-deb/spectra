@@ -21,6 +21,7 @@ export function useAlbumArtBackground() {
     const blurAmount = settingsStore.albumArtBlur || 20;
     const opacity = settingsStore.albumArtOpacity || 0.3;
     const rotationSpeed = settingsStore.albumArtRotationSpeed || 50;
+    const zoom = settingsStore.albumArtZoom || 1.5;
     const enabled = settingsStore.albumArtWallpaper !== false;
 
     if (!enabled) {
@@ -38,10 +39,11 @@ export function useAlbumArtBackground() {
       backgroundElement.style.opacity = opacity;
       backgroundElement.style.display = 'block';
       
-      // Set infinite rotation animation
+      // Set infinite rotation animation with zoom
       const rotationDuration = rotationSpeed; // seconds
+      backgroundElement.style.setProperty('--album-art-zoom', zoom);
       backgroundElement.style.animation = `albumArtRotate ${rotationDuration}s linear infinite`;
-      backgroundElement.style.transform = 'scale(1.15)';
+      backgroundElement.style.transform = `scale(${zoom})`;
     } else {
       // No album art - hide background
       console.log('[AlbumArtBackground] No album art, hiding background');
@@ -128,7 +130,7 @@ export function useAlbumArtBackground() {
 
   // Watch for settings changes
   watch(
-    () => [settingsStore.albumArtWallpaper, settingsStore.albumArtBlur, settingsStore.albumArtOpacity, settingsStore.albumArtRotationSpeed],
+    () => [settingsStore.albumArtWallpaper, settingsStore.albumArtBlur, settingsStore.albumArtOpacity, settingsStore.albumArtRotationSpeed, settingsStore.albumArtZoom],
     async () => {
       const artUrl = audioStore.albumArt || await loadAlbumArtForCurrentTrack();
       await updateBackground(artUrl);

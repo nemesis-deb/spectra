@@ -9,7 +9,7 @@
     <!-- Main App Container -->
     <div class="app-container">
       <!-- Sidebar with Tabs -->
-      <div class="sidebar-container">
+      <div v-if="songLibraryVisible" class="sidebar-container">
         <SidebarTabs />
         
         <!-- File Browser (left sidebar) -->
@@ -24,7 +24,7 @@
       
       <div class="content-wrapper">
         <!-- Audio Player -->
-        <AudioPlayer />
+        <AudioPlayer v-if="musicPlayerVisible" />
         
         <!-- Bottom Section: Canvas + Right Panel -->
         <div class="bottom-section">
@@ -32,7 +32,7 @@
           <VisualizerCanvas />
           
           <!-- Visualizer Panel (right side) -->
-          <VisualizerPanel />
+          <VisualizerPanel v-if="visualizerManagerVisible" />
         </div>
       </div>
     </div>
@@ -57,11 +57,17 @@ import YouTubePanel from './components/YouTubePanel.vue';
 import FileBrowser from './components/FileBrowser.vue';
 import SidebarTabs from './components/SidebarTabs.vue';
 import { useSettingsStore } from './stores/settings.js';
+import { useUIStore } from './stores/ui.js';
 import { useAudioIntegration } from './composables/useAudioIntegration.js';
 import { useAlbumArtBackground } from './composables/useAlbumArtBackground.js';
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 
 const settingsStore = useSettingsStore();
+const uiStore = useUIStore();
+
+const songLibraryVisible = computed(() => uiStore.songLibraryVisible);
+const musicPlayerVisible = computed(() => uiStore.musicPlayerVisible);
+const visualizerManagerVisible = computed(() => uiStore.visualizerManagerVisible);
 const { initializeIntegration, enhanceAudioManager } = useAudioIntegration();
 const { updateBackground } = useAlbumArtBackground();
 

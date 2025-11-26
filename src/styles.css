@@ -157,14 +157,15 @@ body {
 }
 
 .menu-dropdown {
-  position: fixed;
-  top: 40px;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 4px;
   background: #2a2a2a;
   border: 1px solid #444;
   border-radius: 6px;
   min-width: 200px;
   padding: 4px 0;
-  margin-top: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   display: none;
   z-index: 99999;
@@ -200,6 +201,17 @@ body {
   color: #888;
   font-size: 11px;
   margin-left: 20px;
+}
+
+.menu-checkmark {
+  color: var(--theme-primary);
+  font-weight: bold;
+  margin-left: auto;
+  font-size: 14px;
+}
+
+.menu-item-checked {
+  color: var(--theme-primary);
 }
 
 .title-bar-center {
@@ -288,17 +300,17 @@ body {
   z-index: -1; /* Behind everything including menus */
   display: none;
   transition: opacity 0.8s ease, filter 0.8s ease;
-  transform: scale(1.15); /* Slight zoom to hide edges after blur */
+  transform: scale(var(--album-art-zoom, 1.5)); /* Zoom to hide edges after blur, configurable in settings */
   transform-origin: center center;
   will-change: transform, opacity, filter;
 }
 
 @keyframes albumArtRotate {
   from {
-    transform: scale(1.15) rotate(0deg);
+    transform: scale(var(--album-art-zoom, 1.5)) rotate(0deg);
   }
   to {
-    transform: scale(1.15) rotate(360deg);
+    transform: scale(var(--album-art-zoom, 1.5)) rotate(360deg);
   }
 }
 
@@ -2042,8 +2054,7 @@ input[type="checkbox"]:checked::after {
   opacity: 0.7;
 }
 
-/* Notif
-ication animations */
+/* Notification animations */
 @keyframes slideIn {
   from {
     transform: translateX(400px);
@@ -2065,5 +2076,764 @@ ication animations */
   to {
     transform: translateX(400px);
     opacity: 0;
+  }
+}
+
+/* ============================================
+   COMPREHENSIVE ANIMATIONS FOR ALL COMPONENTS
+   ============================================ */
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Slide In From Left */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Slide In From Right */
+@keyframes slideInRight {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Slide In From Bottom */
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Scale In Animation */
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Shake Animation */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Rotate Animation */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Bounce Animation */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* ============================================
+   ENHANCED COMPONENT ANIMATIONS
+   ============================================ */
+
+/* Sidebar Tabs - Enhanced */
+.sidebar-tabs {
+  animation: fadeIn 0.3s ease;
+}
+
+.tab-button {
+  animation: fadeIn 0.3s ease;
+  animation-fill-mode: both;
+}
+
+.tab-button:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.tab-button:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.tab-button:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.tab-button .tab-icon {
+  transition: transform 0.2s ease;
+}
+
+.tab-button:hover .tab-icon {
+  transform: scale(1.1);
+}
+
+.tab-button.active .tab-icon {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* File Items - Staggered Animation */
+.file-item,
+.folder-item {
+  animation: slideInLeft 0.3s ease;
+  animation-fill-mode: both;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.file-item:nth-child(1),
+.folder-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.file-item:nth-child(2),
+.folder-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.file-item:nth-child(3),
+.folder-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.file-item:hover,
+.folder-item:hover {
+  transform: translateX(4px) scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.file-item.selected,
+.file-item.playing {
+  animation: scaleIn 0.2s ease;
+}
+
+.file-icon img {
+  transition: transform 0.3s ease;
+}
+
+.file-item:hover .file-icon img {
+  transform: scale(1.1);
+}
+
+/* Folder Headers */
+.folder-header {
+  animation: fadeIn 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.folder-header:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.folder-toggle {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.folder-content {
+  animation: slideInUp 0.3s ease;
+  overflow: hidden;
+}
+
+/* Buttons - Enhanced */
+button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 255, 136, 0.2);
+}
+
+.icon-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-btn:hover:not(:disabled) {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.toggle-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-btn.active {
+  animation: scaleIn 0.2s ease;
+}
+
+/* Menu Items */
+.menu-item {
+  animation: fadeIn 0.3s ease;
+  animation-fill-mode: both;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.menu-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.menu-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.menu-item:hover {
+  transform: translateX(4px);
+}
+
+.menu-dropdown {
+  animation: slideInUp 0.2s ease;
+}
+
+/* Progress Bar - Enhanced */
+.progress-bar {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-fill {
+  transition: width 0.1s linear, background 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progress-handle {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-bar:hover .progress-handle {
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.6);
+}
+
+/* Input Fields */
+input[type="text"],
+input[type="search"],
+input[type="range"],
+select,
+textarea {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus,
+textarea:focus {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.2);
+}
+
+/* Search Inputs */
+.search-input-wrapper,
+.spotify-search-input-wrapper,
+.youtube-search-input-wrapper {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.3s ease;
+}
+
+.search-input-wrapper:focus-within,
+.spotify-search-input-wrapper:focus-within,
+.youtube-search-input-wrapper:focus-within {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Spotify Panel */
+.spotify-track-item {
+  animation: slideInLeft 0.3s ease;
+  animation-fill-mode: both;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.spotify-track-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.spotify-track-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.spotify-track-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.spotify-track-item:hover {
+  transform: translateX(4px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.spotify-track-item .track-artwork img {
+  transition: transform 0.3s ease;
+}
+
+.spotify-track-item:hover .track-artwork img {
+  transform: scale(1.1);
+}
+
+.spotify-connect-btn {
+  animation: scaleIn 0.3s ease;
+}
+
+.spotify-connect-btn:hover {
+  animation: bounce 0.6s ease;
+}
+
+/* YouTube Panel */
+.youtube-video-item {
+  animation: slideInLeft 0.3s ease;
+  animation-fill-mode: both;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.youtube-video-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.youtube-video-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.youtube-video-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.youtube-video-item:hover {
+  transform: translateX(4px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.youtube-video-item .video-thumbnail img {
+  transition: transform 0.3s ease;
+}
+
+.youtube-video-item:hover .video-thumbnail img {
+  transform: scale(1.1);
+}
+
+.youtube-search-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.youtube-search-btn:hover:not(:disabled) {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Settings Panel */
+.settings-modal {
+  animation: fadeIn 0.3s ease;
+}
+
+.settings-modal-content {
+  animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.settings-category {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.3s ease;
+  animation-fill-mode: both;
+}
+
+.settings-category:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.settings-category:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.settings-category:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.settings-category:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+.settings-category:nth-child(5) {
+  animation-delay: 0.25s;
+}
+
+.settings-category:hover {
+  transform: translateX(4px);
+}
+
+.settings-category.active {
+  animation: scaleIn 0.2s ease;
+}
+
+.settings-section {
+  animation: fadeIn 0.3s ease;
+}
+
+.setting-item {
+  animation: slideInUp 0.3s ease;
+  animation-fill-mode: both;
+}
+
+.setting-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.setting-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.setting-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+/* Queue Panel */
+.queue-panel:not(.hidden) {
+  animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.queue-item {
+  animation: slideInLeft 0.3s ease;
+  animation-fill-mode: both;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.queue-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.queue-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.queue-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.queue-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Empty States */
+.empty-state,
+.spotify-empty-state,
+.youtube-empty-state {
+  animation: fadeIn 0.5s ease;
+}
+
+.empty-state svg,
+.spotify-empty-state svg,
+.youtube-empty-state svg {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Loading States */
+.spinner {
+  animation: rotate 1s linear infinite;
+}
+
+.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Now Playing Art */
+.now-playing-art {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.5s ease;
+}
+
+.now-playing-art img {
+  transition: transform 0.3s ease;
+}
+
+.now-playing-art:hover img {
+  transform: scale(1.1);
+}
+
+/* Volume Slider */
+.volume-slider {
+  transition: all 0.2s ease;
+}
+
+.volume-slider:hover {
+  transform: scaleY(1.2);
+}
+
+/* Time Display */
+.time-display {
+  animation: fadeIn 0.3s ease;
+  transition: all 0.2s ease;
+}
+
+/* Playlist Items */
+.playlist-item {
+  animation: slideInLeft 0.3s ease;
+  animation-fill-mode: both;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.playlist-item:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.playlist-item:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.playlist-item:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.playlist-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.playlist-item.selected {
+  animation: scaleIn 0.2s ease;
+}
+
+/* Visualizer Panel */
+.right-panel-section {
+  animation: fadeIn 0.3s ease;
+}
+
+.right-panel-section input[type="range"] {
+  transition: all 0.2s ease;
+}
+
+.right-panel-section input[type="range"]:hover {
+  transform: scaleY(1.2);
+}
+
+/* Window Controls */
+.window-control {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.window-control:hover {
+  transform: scale(1.1);
+}
+
+.window-control:active {
+  transform: scale(0.95);
+}
+
+.window-control svg {
+  transition: transform 0.2s ease;
+}
+
+.window-control:hover svg {
+  transform: rotate(90deg);
+}
+
+/* Title Bar */
+.custom-title-bar {
+  animation: slideInUp 0.3s ease;
+}
+
+.app-name {
+  animation: fadeIn 0.5s ease;
+  transition: all 0.3s ease;
+}
+
+.app-name:hover {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Sidebar Container */
+.sidebar-container {
+  animation: slideInLeft 0.3s ease;
+}
+
+.sidebar {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Content Wrapper */
+.content-wrapper {
+  animation: fadeIn 0.5s ease;
+}
+
+/* Audio Player */
+.audio-player {
+  animation: slideInUp 0.4s ease;
+}
+
+.controls-bar {
+  animation: slideInUp 0.4s ease;
+  animation-delay: 0.1s;
+  animation-fill-mode: both;
+}
+
+/* Gain Controls */
+.gain-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gain-btn:hover:not(:disabled) {
+  transform: scale(1.2);
+}
+
+.gain-btn:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+/* Queue Button */
+.queue-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.queue-btn:hover {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.queue-btn:active {
+  transform: scale(0.95);
+}
+
+/* BPM and Key Display */
+.bpm-display,
+.key-display {
+  animation: scaleIn 0.3s ease;
+  transition: all 0.2s ease;
+}
+
+.bpm-display:hover,
+.key-display:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 255, 136, 0.3);
+}
+
+/* Path Segments */
+.path-segment {
+  transition: all 0.2s ease;
+}
+
+.path-segment:hover {
+  transform: translateX(2px);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Folder Path */
+.folder-path {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Smooth Scroll */
+.sidebar-content,
+.file-browser,
+.spotify-results-section,
+.youtube-results-section {
+  scroll-behavior: smooth;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

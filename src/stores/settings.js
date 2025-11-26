@@ -36,6 +36,7 @@ export const useSettingsStore = defineStore('settings', {
     albumArtBlur: 20,
     albumArtOpacity: 0.3,
     albumArtRotationSpeed: 50, // seconds for full rotation (higher = slower)
+    albumArtZoom: 1.5, // Zoom level to avoid visible corners (default 1.5x)
     
     // Developer
     openDevToolsOnStartup: false,
@@ -104,6 +105,7 @@ export const useSettingsStore = defineStore('settings', {
           albumArtBlur: this.albumArtBlur,
           albumArtOpacity: this.albumArtOpacity,
           albumArtRotationSpeed: this.albumArtRotationSpeed,
+          albumArtZoom: this.albumArtZoom,
           openDevToolsOnStartup: this.openDevToolsOnStartup
         };
         localStorage.setItem('audioVisualizerSettings', JSON.stringify(settings));

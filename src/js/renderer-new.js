@@ -281,13 +281,26 @@ async function initialize() {
           const source = ctx.createMediaElementSource(mediaElement);
           this.externalAudioSource = source;
           
-          // Connect: source -> analyser -> gainNode -> destination
-          source.connect(spectra.analyser);
-          if (spectra.gainNode) {
-            spectra.analyser.connect(spectra.gainNode);
-            spectra.gainNode.connect(ctx.destination);
+          // Connect: source -> dbGainNode -> analyser -> gainNode -> destination
+          // dbGainNode affects visualizer intensity, gainNode affects output volume
+          if (spectra.dbGainNode) {
+            source.connect(spectra.dbGainNode);
+            spectra.dbGainNode.connect(spectra.analyser);
+            if (spectra.gainNode) {
+              spectra.analyser.connect(spectra.gainNode);
+              spectra.gainNode.connect(ctx.destination);
+            } else {
+              spectra.analyser.connect(ctx.destination);
+            }
           } else {
-            spectra.analyser.connect(ctx.destination);
+            // Fallback: no dbGainNode, use old connection
+            source.connect(spectra.analyser);
+            if (spectra.gainNode) {
+              spectra.analyser.connect(spectra.gainNode);
+              spectra.gainNode.connect(ctx.destination);
+            } else {
+              spectra.analyser.connect(ctx.destination);
+            }
           }
           
           // Set up event listeners
